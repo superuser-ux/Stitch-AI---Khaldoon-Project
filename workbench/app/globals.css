@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+/* #380 — Tanaghom DAYLIGHT visual system (evolves #335's V2-owned token layer).
+ *
+ * A deterministic, light-first semantic token layer for the calendar-first human-UAT lane. It is the
+ * SINGLE source of every visual literal (color / typography / spacing / radius / elevation / focus /
+ * action / status / calendar). Presentation components consume these tokens by name and MUST NOT
+ * introduce literals of their own. Tokens change VISUAL REPRESENTATION only — they never rename or
+ * reinterpret any domain status/state value, imply approval/readiness/authority, or touch routing,
+ * data, evidence, or governed truth.
+ *
+ * APPEARANCE POLICY (deterministic for UAT — #380 acceptance 3): the base :root is Light and is what
+ * renders unless a user EXPLICITLY selects Dark. There is deliberately NO `prefers-color-scheme`
+ * rule: the host OS light/dark preference does NOT determine rendering. `:root[data-theme="dark"]` is
+ * the only non-light state and is entered only by an explicit in-app selection; it re-expresses the
+ * same tokens and changes nothing but appearance. `:root[data-theme="light"]` is an explicit light
+ * selection (identical to the base). Direction (`dir`) and schedule style (`data-schedule-style`)
+ * remain independent, orthogonal attributes.
+ *
+ * Identity is retained: the Tanaghom orange accent and the approved font stack are unchanged in intent;
+ * Daylight tunes surfaces/text/borders for calm legibility (cooler near-white canvas, stronger text
+ * contrast, softer hairline borders) and adds a soft-status vocabulary for truth-bound state chips. */
+
+:root {
+  /* ── surfaces ─────────────────────────────────────────────────────────────── */
+  --color-bg: oklch(98% 0.003 250);          /* app canvas — calm cool near-white */
+  --color-nav: oklch(99.4% 0.002 250);       /* header/footer chrome surface */
+  --color-card: oklch(100% 0 0);             /* primary content surface */
+  --color-elevated: oklch(99.2% 0.002 250);  /* raised surface (popovers/toolbars) */
+  --color-sunken: oklch(96.4% 0.004 250);    /* inset wells (inputs/tracks) */
+  /* ── text ─────────────────────────────────────────────────────────────────── */
+  --color-fg: oklch(24% 0.015 260);          /* primary text (AA on card/bg) */
+  --color-muted: oklch(47% 0.014 260);       /* secondary text (AA on card/bg) */
+  --color-subtle: oklch(60% 0.012 260);      /* tertiary/diagnostic text */
+  --color-on-accent: oklch(99% 0 0);         /* text on the accent fill */
+  /* ── borders + focus ──────────────────────────────────────────────────────── */
+  --color-border-subtle: oklch(94% 0.004 250);
+  --color-border: oklch(88.5% 0.006 250);
+  --color-border-strong: oklch(65% 0.012 255); /* strong divider/emphasis — AA non-text (>=3:1) */
+  --color-focus: oklch(58% 0.16 255);          /* visible focus ring, both themes */
+  /* ── accent — Tanaghom orange (identity retained; deepened so WHITE label text on the fill meets
+   *    AA 4.5:1 — a required accessibility correction over the prior too-light L66% orange) ──────── */
+  --color-accent: oklch(57% 0.16 50);
+  --color-accent-hover: oklch(51% 0.16 50);
+  --color-accent-soft: color-mix(in oklab, var(--color-accent) 12%, var(--color-card));
+  --color-on-accent-soft: oklch(38% 0.12 52);
+  /* ── status — VISUAL tokens only; markup status VALUES/meanings are unchanged.
+   *    Each has a solid tone (icons/text/borders) and a SOFT surface (chip backgrounds), so a state
+   *    reads as calm information, never as an alarm that overstates severity or authority. ───────── */
+  --color-danger: oklch(55% 0.19 26);
+  --color-danger-soft: color-mix(in oklab, var(--color-danger) 11%, var(--color-card));
+  --color-warn: oklch(64% 0.14 70);
+  --color-warn-soft: color-mix(in oklab, var(--color-warn) 13%, var(--color-card));
+  --color-ok: oklch(54% 0.13 155);
+  --color-ok-soft: color-mix(in oklab, var(--color-ok) 12%, var(--color-card));
+  --color-info: oklch(56% 0.12 240);
+  --color-info-soft: color-mix(in oklab, var(--color-info) 12%, var(--color-card));
+  /* ── calendar semantics (bridged to FullCalendar below) ───────────────────── */
+  --color-cal-today: color-mix(in oklab, var(--color-accent) 10%, transparent);
+  --color-cal-highlight: color-mix(in oklab, var(--color-accent) 16%, transparent);
+  --color-cal-now: var(--color-danger);
+  /* ── elevation ────────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px oklch(20% 0.02 265 / 0.05), 0 1px 1px oklch(20% 0.02 265 / 0.04);
+  --shadow-md: 0 4px 12px oklch(20% 0.02 265 / 0.09), 0 2px 4px oklch(20% 0.02 265 / 0.05);
+  --shadow-lg: 0 12px 28px oklch(20% 0.02 265 / 0.12), 0 4px 10px oklch(20% 0.02 265 / 0.07);
+  /* ── shape ────────────────────────────────────────────────────────────────── */
+  --radius-sm: 0.5rem;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-pill: 999px;
+  /* ── typography — deterministic type scale + line-heights (no remote font) ──── */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans Arabic", "Geeza Pro", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", monospace;
+  --text-xs: 0.6875rem;   --leading-xs: 1rem;
+  --text-sm: 0.8125rem;   --leading-sm: 1.15rem;
+  --text-base: 0.875rem;  --leading-base: 1.35rem;
+  --text-lg: 1rem;        --leading-lg: 1.5rem;
+  --text-xl: 1.25rem;     --leading-xl: 1.75rem;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  /* ── spacing scale (semantic step vocabulary for in-scope components) ──────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  /* schedule-style density knobs (presentation only) — defaults; overridden per data-schedule-style */
+  --wb-card-pad: 0.5rem;
+  --wb-list-gap: 0.5rem;
+}
+
+/* Explicit dark selection — the ONLY non-light state, entered solely by an in-app choice (never the
+ * OS). It re-expresses every token and changes nothing but appearance. */
+:root[data-theme="dark"] {
+  --color-bg: oklch(17% 0.012 265);
+  --color-nav: oklch(19.5% 0.013 265);
+  --color-card: oklch(21% 0.014 265);
+  --color-elevated: oklch(25% 0.016 265);
+  --color-sunken: oklch(15% 0.011 265);
+  --color-fg: oklch(96% 0.005 265);
+  --color-muted: oklch(72% 0.012 265);
+  --color-subtle: oklch(60% 0.012 265);
+  --color-on-accent: oklch(18% 0.01 265);
+  --color-border-subtle: oklch(26% 0.013 265);
+  --color-border: oklch(31% 0.014 265);
+  --color-border-strong: oklch(55% 0.016 265); /* AA non-text divider against the dark card */
+  --color-focus: oklch(74% 0.13 255);
+  --color-accent: oklch(72% 0.16 58);
+  --color-accent-hover: oklch(78% 0.15 60);
+  --color-accent-soft: color-mix(in oklab, var(--color-accent) 22%, var(--color-card));
+  --color-on-accent-soft: oklch(90% 0.06 60);
+  --color-danger: oklch(68% 0.18 26);
+  --color-danger-soft: color-mix(in oklab, var(--color-danger) 22%, var(--color-card));
+  --color-warn: oklch(78% 0.13 78);
+  --color-warn-soft: color-mix(in oklab, var(--color-warn) 20%, var(--color-card));
+  --color-ok: oklch(72% 0.13 158);
+  --color-ok-soft: color-mix(in oklab, var(--color-ok) 20%, var(--color-card));
+  --color-info: oklch(72% 0.12 240);
+  --color-info-soft: color-mix(in oklab, var(--color-info) 20%, var(--color-card));
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-md: 0 4px 14px oklch(0% 0 0 / 0.5);
+  --shadow-lg: 0 14px 32px oklch(0% 0 0 / 0.6);
+}
+
+/* Schedule styles — PRESENTATION ONLY. These change density/hierarchy over the SAME canonical rows;
+ * they never reorder, regroup inputs, or alter identity/tokens/payloads. */
+:root[data-schedule-style="editorial"] {
+  --wb-card-pad: 0.85rem;
+  --wb-list-gap: 0.85rem;
+}
+:root[data-schedule-style="operational"] {
+  --wb-card-pad: 0.4rem;
+  --wb-list-gap: 0.35rem;
+}
+/* Apply the density knobs to the schedule + allocation containers via STABLE data-testids (never
+ * hashed classes). Card padding targets ONLY the direct allocation-card nodes — a structurally exact
+ * `list > [data-slot-id]` selector, NOT the `alloc-` prefix (which the card's own descendants —
+ * alloc-code/status/genstate/placement/platform/format/class/lang/inspect — also carry, so a prefix
+ * rule would distort every chip/text/details). Editorial also lifts the schedule code's hierarchy. */
+[data-testid="coverage-allocation-list"] { gap: var(--wb-list-gap); }
+[data-testid="coverage-allocation-list"] > [data-slot-id] { padding: var(--wb-card-pad); }
+[data-testid="schedule-cells"] { gap: var(--wb-list-gap); }
+:root[data-schedule-style="editorial"] [data-testid^="alloc-code-"],
+:root[data-schedule-style="editorial"] [data-testid^="cell-code-"] {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+/* Editorial campaign/date group headers (rendered as a pure ordered projection; see topics-workspace). */
+[data-testid^="alloc-group-"] { display: none; }
+:root[data-schedule-style="editorial"] [data-testid^="alloc-group-"] {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+/* #410 — canonical product-surface implementation-state treatment. ONE shared semantic class so a
+ * surface's visual state is driven by its registry metadata, never per-component opacity guesses; a
+ * surface changes consistently the instant its registry state changes. Theme-aware through the same
+ * --color-* tokens (light base + explicit dark override above). Color is never the sole status signal:
+ * dimmed surfaces also carry disabled semantics (aria-disabled) and visible status copy in the markup. */
+.surface-tone[data-surface-tone="active"] {
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+.surface-tone[data-surface-tone="dimmed"] {
+  color: var(--color-muted);
+  border-color: var(--color-border-subtle);
+  background: var(--color-sunken);
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+body {
+  font-family: var(--font-ui);
+  /* Deterministic base type scale (#380 acceptance 9): size + line-height come from tokens, so the
+   * type rhythm is centrally governed and identical across surfaces. No remote font is requested. */
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+code,
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Visible, consistent focus in both appearance modes (keyboard operability). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Respect reduced motion: transitions/animations run only when the user has no preference against it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* #340 — FullCalendar theming, bound to the V2 tokens through the Classic theme's OWN variables.
+ *
+ * This block replaces nine `--fc-*-color` names that were FullCalendar v6 generation. v7 namespaces
+ * theme variables per theme (`--fc-classic-*`), so those nine matched nothing in the installed 7.0.0
+ * package — verified against every file it ships. They were not partial theming; they were inert.
+ *
+ * ONE block is sufficient for Light/Dark/System. Each binding points at a `--color-*` token, and those
+ * tokens are already redefined under `:root[data-theme="dark"]` and the System media query above, so
+ * the calendar inherits the appearance flip automatically. Tanaghom therefore remains the SOLE theme
+ * authority: we never set FullCalendar's own `data-color-scheme` switch, so its built-in dark block
+ * simply never activates — it is left unused rather than competing.
+ *
+ * Only variables are set; no structural rule is overridden and no hashed internal class is referenced.
+ * The two dot-width and two opacity variables are deliberately left at their package defaults. */
+:root {
+  /* surfaces + text */
+  --fc-classic-background: var(--color-card);
+  --fc-classic-foreground: var(--color-fg);
+  --fc-classic-faint: var(--color-bg);
+  --fc-classic-faint-foreground: var(--color-muted);
+  --fc-classic-muted: var(--color-elevated);
+  --fc-classic-muted-foreground: var(--color-muted);
+  --fc-classic-strong: var(--color-elevated);
+  /* borders */
+  --fc-classic-border: var(--color-border);
+  --fc-classic-strong-border: var(--color-border-strong);
+  /* primary + events — the accent token carries Tanaghom orange into event chips */
+  --fc-classic-primary: var(--color-accent);
+  --fc-classic-primary-foreground: var(--color-on-accent);
+  --fc-classic-event: var(--color-accent);
+  --fc-classic-event-contrast: var(--color-on-accent);
+  --fc-classic-background-event: var(--color-ok);
+  /* day/time emphasis — `today` preserves the previous 10% accent tint, now expressed against the
+   * token so it tracks appearance instead of being frozen at the old literal. */
+  --fc-classic-today: var(--color-cal-today);
+  --fc-classic-highlight: var(--color-cal-highlight);
+  --fc-classic-now: var(--color-cal-now);
+  /* toolbar buttons */
+  --fc-classic-button: var(--color-card);
+  --fc-classic-button-border: var(--color-border);
+  --fc-classic-button-foreground: var(--color-fg);
+  --fc-classic-button-strong: var(--color-accent);
+  --fc-classic-button-strong-border: var(--color-accent-hover);
+  --fc-classic-button-outline: var(--color-focus);
+}

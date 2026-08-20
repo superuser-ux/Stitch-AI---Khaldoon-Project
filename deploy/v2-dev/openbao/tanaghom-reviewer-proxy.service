@@ -1,0 +1,45 @@
+# #387 — v2-dev reviewer-proxy secret materializer (root oneshot, triggered by the .timer).
+# Non-secret host adapter; fetches one OpenBao value and republishes it to the tmpfs runtime path.
+# A failed run does NOT refresh the published file; applications fail closed after the FILE max age.
+[Unit]
+Description=Tanaghom v2-dev reviewer-proxy secret materializer (OpenBao -> tmpfs)
+After=network-online.target
+Wants=network-online.target
+# The isolated developer OpenBao must be up+unsealed; on a sealed instance the run fails closed.
+After=docker.service
+
+[Service]
+Type=oneshot
+# Run the service as the application identity (10001:10001) so the preserved RuntimeDirectory is created
+# and re-owned by systemd at the FINAL app ownership — never reset back to root between timer runs (which
+# would create an avoidable unreadable interval on the 0400 file while the network fetch runs).
+User=10001
+Group=10001
+UMask=0077
+# The materializer is HOST OpenBao infrastructure — installed alongside the existing isolated OpenBao
+# custody tree under /srv/tanaghom-dev/openbao/ during the cutover phase, NOT transferred inside the
+# immutable app candidate-path layout at /srv/tanaghom-v2-dev (which stays app-only: compose + images +
+# MANIFEST + load script). No secret-bearing artifact enters /srv/tanaghom-v2-dev.
+#
+# The `!` prefix runs ONLY this command as root (skipping the User/Group credential drop) so it can read
+# the root-owned custody files and chown the published file, while ProtectSystem=strict, PrivateTmp, and
+# ReadWritePaths STILL apply. The script's EUID==0 guard therefore holds. Never use `+`, which would also
+# bypass filesystem namespacing.
+ExecStart=!/srv/tanaghom-dev/openbao/materialize-reviewer-proxy.sh
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# /run is tmpfs and empty after boot, so the unprefixed ReadWritePaths path would not exist while systemd
+# sets up the service namespace (the unit would fail before ExecStart). RuntimeDirectory makes systemd
+# create /run/tanaghom-secrets BEFORE namespace setup, owned by the service User/Group (10001:10001) at
+# mode 0500. Preserve=yes keeps the published secret file across this oneshot's exit and between timer runs
+# (a oneshot would otherwise have its RuntimeDirectory removed on stop). ReadWritePaths keeps it writable
+# under ProtectSystem=strict.
+RuntimeDirectory=tanaghom-secrets
+RuntimeDirectoryMode=0500
+RuntimeDirectoryPreserve=yes
+ReadWritePaths=/run/tanaghom-secrets
+# Non-secret status only; secret material never reaches the journal.
+StandardOutput=journal
+StandardError=journal

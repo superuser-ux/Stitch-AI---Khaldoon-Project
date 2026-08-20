@@ -1,0 +1,16 @@
+# Mirrors dashboard/.gitignore — the repo's per-frontend-package convention. The ROOT .gitignore
+# covers node_modules/ but NOT .next/, so each Next package ignores its own build output here.
+node_modules/
+.next/
+next-env.d.ts
+.env.local
+*.tsbuildinfo
+
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# #372 — the evidence bundle is GENERATED per run by scripts/v372-evidence.mjs; never committed
+# (a committed bundle would create evidence/head circularity and could go stale silently).
+e2e/acceptance/v372-evidence-bundle.json

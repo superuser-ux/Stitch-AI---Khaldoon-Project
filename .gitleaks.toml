@@ -1,0 +1,30 @@
+# Extends gitleaks' default ruleset with project-specific patterns.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "groq-api-key"
+description = "Groq API key"
+regex = '''gsk_[A-Za-z0-9]{40,}'''
+keywords = ["gsk_"]
+
+[[rules]]
+id = "tanaghom-db-password"
+description = "Postgres password (long hex) in a tracked file"
+regex = '''(?i)DB_PASSWORD\s*[=:]\s*['"]?[0-9a-f]{32,}'''
+keywords = ["DB_PASSWORD"]
+
+# .env and system_config.yaml are gitignored and never scanned as tracked content.
+# `regexes` exempt known FALSE POSITIVES (synthetic identifiers / config keys), not real secrets:
+#   - pillar-code constants like P2_RELATIONSHIPS in the selftest slot tuples
+#   - HCS-id strings, round/slot ids (RAPI-2 etc.)
+#   - `default_kind` — a Python kwarg name (engine.normalize_assignment_token)
+#   - `3sec_reel_caption` — a content-format key in the methodology loader
+[allowlist]
+paths = ['''\.env$''', '''system_config\.yaml$''']
+regexes = [
+  '''P[1-5]_[A-Z_]+''',
+  '''R[A-Z0-9]+-[0-9]''',
+  '''default_kind''',
+  '''3sec_reel_caption''',
+]

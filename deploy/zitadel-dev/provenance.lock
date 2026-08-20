@@ -1,0 +1,4 @@
+zitadel|ghcr.io/zitadel/zitadel:v4.16.2|sha256:4b68a2106f60baa2895e5a00a77fcd915d29d0db3f0c011d3eb9f99f557b2b48|sha256:895892140e568cfd1d8d08465a5459bb4c2e310b9389e0ec24d29c9376287d20|https://github.com/zitadel/zitadel/releases/tag/v4.16.2
+login|ghcr.io/zitadel/zitadel-login:v4.16.2|sha256:f35e20cf3edd4a45a44c548b887c58304b350ed56078546735015f5cd17eef75|sha256:78000e58dac07e2f2797c5215920a0fc6f61672c03b3e3cc26b123517b6ab351|https://github.com/zitadel/zitadel/releases/tag/v4.16.2
+postgres|postgres:17-alpine|sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193|sha256:af194ccf3e2d7fe367012c7b88ce8b816c5c889b18a5b316799a1f0d7eac746a|https://hub.docker.com/_/postgres
+caddy|caddy:2.10.2-alpine|sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d|sha256:d8c17a862962def15cde69863a3a463f25a2664942eafd7bdbf050e9c3116b83|https://hub.docker.com/_/caddy

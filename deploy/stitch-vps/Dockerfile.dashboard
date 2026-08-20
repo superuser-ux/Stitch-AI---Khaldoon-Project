@@ -1,0 +1,26 @@
+FROM node:22-bookworm-slim
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build identity is deliberately NOT baked here (#202): the image stays genuinely unstamped
+# ("unknown") and the compose file supplies the exact deployed revision at container runtime via
+# TANAGHOM_BUILD_SHA — so a recreated container can never carry a stale baked revision.
+
+# #297 — pin the package manager EXACTLY. `corepack enable` on its own resolves pnpm to whatever is
+# registry-latest at BUILD TIME (measured: 11.13.1 on this image), so the frozen-install contract
+# drifted with the calendar instead of tracking the committed manifest. Activate the same exact
+# version both frontend roots now declare, so the image installs from the committed lockfile using
+# the package manager that produced it.
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
+
+WORKDIR /work/dashboard
+
+COPY dashboard/package.json dashboard/pnpm-lock.yaml dashboard/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY dashboard/ ./
+RUN pnpm build
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]

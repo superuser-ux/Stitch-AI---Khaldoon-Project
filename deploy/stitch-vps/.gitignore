@@ -1,0 +1,5 @@
+.env
+!.env.example
+config/system_config.yaml
+backups/*
+!backups/.gitkeep

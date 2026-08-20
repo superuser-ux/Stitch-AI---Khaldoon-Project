@@ -1,0 +1,11 @@
+# engine + cli + selftest
+psycopg2-binary==2.9.10
+PyYAML==6.0.2
+# api (dashboard backend)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+# telegram bridge
+python-telegram-bot==21.10
+
+# conversational agent (M6) — Groq via the OpenAI-compatible client
+openai>=1.40,<2

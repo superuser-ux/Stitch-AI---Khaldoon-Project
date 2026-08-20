@@ -1,0 +1,18 @@
+{
+	auto_https off
+	admin off
+}
+
+:13210 {
+	redir / /ui/v2/login/ 302
+
+	handle /ui/v2/login* {
+		reverse_proxy zitadel-login:3000
+	}
+
+	handle {
+		reverse_proxy h2c://zitadel-api:8080 {
+			header_up -TE
+		}
+	}
+}

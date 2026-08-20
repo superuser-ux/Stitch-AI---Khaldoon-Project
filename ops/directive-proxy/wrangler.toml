@@ -1,0 +1,7 @@
+# Cloudflare Worker config for the directive-bus proxy.
+# Secrets are NOT stored here — set them with `wrangler secret put` (see PROXY-SETUP.md):
+#   wrangler secret put GITHUB_TOKEN   # the fine-grained PAT (issues r/w on Kholio/tanaghom)
+#   wrangler secret put PROXY_SECRET   # a random string the GPT presents as its Bearer key
+name = "tanaghom-directive-proxy"
+main = "worker.js"
+compatibility_date = "2025-01-01"

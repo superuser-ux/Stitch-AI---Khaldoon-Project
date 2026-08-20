@@ -1,0 +1,108 @@
+# #338 — PRIVATE, LOCAL, ACCEPTANCE-ONLY compose. Exactly three services: PostgreSQL/pgvector (internal
+# only), the governed API, and the V2 workbench. No V1 dashboard/proxy, no public interface, no VPS
+# path, no registry coordinate, no production restart policy, no live-secret name, no destructive volume
+# cleanup, no host networking, and no #337-lane command. Application ports bind loopback only; the DB has
+# no host port. writer_mode is stub by default; required non-secret topology/build variables fail closed
+# when absent. Secrets are injected at runtime only — never baked into images or committed here.
+name: tanaghom-acc
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${DB_USER:-tanaghom}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD (runtime secret) in the acceptance environment}
+      POSTGRES_DB: ${DB_NAME:-tanaghom}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tanaghom} -d ${DB_NAME:-tanaghom}"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  gateapi:
+    build:
+      context: ../..
+      dockerfile: deploy/stitch-vps/Dockerfile.api
+      args:
+        GIT_SHA: ${ACC_GIT_SHA:?set ACC_GIT_SHA to the exact 40-char build SHA}
+    image: tanaghom-acc-gateapi:${ACC_GIT_SHA:?set ACC_GIT_SHA}
+    # Run unchanged governed initialization fail-fast, THEN uvicorn — inside gateapi startup (no init
+    # service). The default image CMD (serve-only) is unchanged; only the private acceptance topology
+    # overrides it here.
+    entrypoint: ["sh", "/work/deploy/acceptance/gateapi-entrypoint.sh"]
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-tanaghom}
+      DB_NAME: ${DB_NAME:-tanaghom}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      REVIEWER_PROXY_SECRET: ${REVIEWER_PROXY_SECRET:?set a temporary acceptance REVIEWER_PROXY_SECRET at runtime}
+      TANAGHOM_WRITER_STUB: "1"
+      TANAGHOM_DEV_MODE: "1"
+      TANAGHOM_CONFIG: /work/system_config.example.yaml
+      PYTHONPATH: /work
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${ACC_API_PORT:?set ACC_API_PORT (loopback host port for the governed API)}:8000"
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 40s
+
+  workbench:
+    build:
+      context: ../../workbench
+      dockerfile: Dockerfile
+      args:
+        GIT_SHA: ${ACC_GIT_SHA:?set ACC_GIT_SHA}
+    image: tanaghom-acc-workbench:${ACC_GIT_SHA:?set ACC_GIT_SHA}
+    environment:
+      API_BASE: http://gateapi:8000
+      REVIEWER_PROXY_SECRET: ${REVIEWER_PROXY_SECRET:?set a temporary acceptance REVIEWER_PROXY_SECRET at runtime}
+      TANAGHOM_DEV_MODE: "1"
+      # #351 — this lane serves a FRESH SYNTHETIC database, so it must say so on screen.
+      #
+      # The workbench never asserts "synthetic" on its own: /api/runtime resolves data_class to
+      # "unknown" unless this exact value is declared, and the banner renders nothing unless the
+      # server reports "synthetic". That default is deliberate — a reassuring label on a lane that
+      # might hold real data is worse than no label — which is precisely why the declaration has to
+      # be made HERE, by the topology that knows the database is synthetic.
+      #
+      # Without these two lines a human acceptance reviewer would see synthetic data with no
+      # disclosure, and any screenshot would carry a claim it had not earned (#337/#342).
+      #
+      # Both are literal, non-secret and environment-independent (no ${...} interpolation, unlike
+      # REVIEWER_PROXY_SECRET above). They are scoped to THIS service only: this file declares every
+      # service's environment explicitly and uses no anchors, aliases, x- extensions, env_file or
+      # merge keys, so neither value can reach db or gateapi.
+      TANAGHOM_WORKBENCH_DATA_CLASS: "synthetic"
+      TANAGHOM_WORKBENCH_LANE_ID: "private-acceptance-337"
+      # TANAGHOM_WORKBENCH_BUILD_SHA is deliberately NOT set here — the image bakes the build SHA and the
+      # runtime entrypoint TERMINATES non-zero if a runtime override diverges from it.
+    depends_on:
+      gateapi:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${ACC_WB_PORT:?set ACC_WB_PORT (loopback host port for the workbench)}:3001"
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3001/api/runtime').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 25s
+
+volumes:
+  db_data:
+
+networks:
+  internal:
+    driver: bridge

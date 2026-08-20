@@ -1,0 +1,74 @@
+{
+  "_doc": "Dev->user domain glossary. Surfaces (dashboard + Telegram) render these business-lexicon labels, NEVER raw enum/code terms. Bilingual AR/EN. One canonical source shared by all surfaces.",
+  "status": {
+    "EMPTY":             {"ar": "فارغ",            "en": "Empty"},
+    "RESERVED":          {"ar": "محجوز",           "en": "Reserved"},
+    "SCHEDULE_APPROVED": {"ar": "الخطة معتمدة",     "en": "Schedule approved"},
+    "TOPIC_PROPOSED":    {"ar": "موضوع مقترح",      "en": "Topic proposed"},
+    "TOPIC_APPROVED":    {"ar": "موضوع معتمد",      "en": "Topic approved"},
+    "DRAFT_ASSIGNED":    {"ar": "بانتظار المراجعة", "en": "Awaiting review"},
+    "APPROVED_ASSIGNED": {"ar": "معتمد",           "en": "Approved"},
+    "READY_FOR_PRODUCTION": {"ar": "جاهز للإنتاج",  "en": "Ready for production"},
+    "PRODUCED":          {"ar": "تم التصوير",       "en": "Produced"},
+    "EDITED":            {"ar": "تم المونتاج",       "en": "Edited"},
+    "SCHEDULED":         {"ar": "مجدول",           "en": "Scheduled"},
+    "PUBLISHED":         {"ar": "منشور",           "en": "Published"},
+    "SKIPPED":           {"ar": "متخطّى",          "en": "Skipped"},
+    "REPLACED":          {"ar": "مستبدل",          "en": "Replaced"}
+  },
+  "decision": {
+    "approve":          {"ar": "مُعتمد",     "en": "Approved"},
+    "reject":           {"ar": "مرفوض",      "en": "Rejected"},
+    "request_change":   {"ar": "يحتاج تعديل", "en": "Needs edits"}
+  },
+  "stage": {
+    "schedule_review": {"ar": "مراجعة الجدول",    "en": "Schedule review"},
+    "topic_review":   {"ar": "مراجعة المواضيع", "en": "Topic review"},
+    "script_review":  {"ar": "مراجعة النصوص",   "en": "Script review"},
+    "native_review":  {"ar": "مراجعة لغوية",     "en": "Language review"},
+    "scholar_review": {"ar": "مراجعة شرعية",     "en": "Religious review"},
+    "final_review":   {"ar": "المراجعة النهائية", "en": "Final review"},
+    "production_review":   {"ar": "مراجعة الإنتاج",  "en": "Production"},
+    "edit_review":         {"ar": "مراجعة المونتاج", "en": "Media edit"},
+    "distribution_review": {"ar": "مراجعة النشر",    "en": "Distribution"}
+  },
+  "outcome": {
+    "signed_off":        {"ar": "تم التوقيع",            "en": "Signed off"},
+    "blocked_on_review": {"ar": "محجوز لحين المراجعة",   "en": "Awaiting required review"},
+    "approved":          {"ar": "معتمد",                "en": "approved → moved on"},
+    "rejected":          {"ar": "مرفوض",                "en": "rejected"},
+    "changes_requested": {"ar": "بانتظار إعادة التوليد", "en": "sent back → awaiting regeneration"},
+    "pending":           {"ar": "بانتظار",              "en": "pending"}
+  },
+  "flag": {
+    "needs_scholar_review":     {"ar": "مراجعة شرعية",     "en": "Religious review"},
+    "needs_native_review":      {"ar": "مراجعة لغوية",     "en": "Language review"},
+    "near_duplicate":           {"ar": "قريب من مكرر",     "en": "Near-duplicate"},
+    "hook_check_failed":        {"ar": "الهوك يحتاج ضبط",  "en": "Hook needs fixing"},
+    "script_hard_fail":         {"ar": "النص يحتاج ضبط",   "en": "Script needs fixing"},
+    "delivery_check_incomplete":{"ar": "التسليم ناقص",     "en": "Delivery incomplete"},
+    "anchor_not_organic":       {"ar": "استشهاد غير منسجم","en": "Anchor not organic"},
+    "anchor_pruned":            {"ar": "أُزيل الاستشهاد",   "en": "Anchor removed"},
+    "dialect_soft_warn":        {"ar": "تنبيه لهجة",       "en": "Dialect note"}
+  },
+  "term": {
+    "slot":   {"ar": "منشور",        "en": "Post"},
+    "round":  {"ar": "خطة المحتوى",   "en": "Content plan"},
+    "gate":   {"ar": "مراجعة",        "en": "Review"},
+    "lens":   {"ar": "زاوية",         "en": "Angle"},
+    "hcs":    {"ar": "وجع إنساني",    "en": "Human struggle"},
+    "hook":   {"ar": "هوك",           "en": "Hook"},
+    "topic":  {"ar": "موضوع",         "en": "Topic"},
+    "script": {"ar": "نص",            "en": "Script"},
+    "rationale": {"ar": "ليش هلأ",    "en": "Why now"}
+  },
+  "role": {
+    "content_owner":     {"ar": "صاحب المحتوى",  "en": "Content owner"},
+    "reviewer":          {"ar": "مراجِع",         "en": "Reviewer"},
+    "language_reviewer": {"ar": "مراجِع لغوي",    "en": "Language reviewer"},
+    "scholar":           {"ar": "مراجِع شرعي",    "en": "Scholar"},
+    "writer":            {"ar": "كاتب",          "en": "Writer"},
+    "planner":           {"ar": "مخطِّط",         "en": "Planner"},
+    "system":            {"ar": "النظام",        "en": "System"}
+  }
+}

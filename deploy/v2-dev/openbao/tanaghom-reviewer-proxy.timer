@@ -1,0 +1,16 @@
+# #387 — drive the reviewer-proxy materializer every 5 minutes. With
+# REVIEWER_PROXY_SECRET_FILE_MAX_AGE_SECONDS=900 (v2-dev), the apps tolerate up to two consecutive
+# missed refreshes before failing closed. Runs shortly after boot too (OpenBao must be unsealed first;
+# a sealed instance fails the run closed, which is intended).
+[Unit]
+Description=Run the Tanaghom v2-dev reviewer-proxy materializer every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=15s
+Persistent=false
+Unit=tanaghom-reviewer-proxy.service
+
+[Install]
+WantedBy=timers.target

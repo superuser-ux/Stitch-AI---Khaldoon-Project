@@ -1,0 +1,35 @@
+.git
+.gitignore
+.DS_Store
+.env
+.env.*
+**/.env
+**/.env.*
+# #338 — never bake operator-owned runtime config into an image (defense in depth; real secrets live
+# in .env, but system_config.yaml is operator-owned and injected at runtime, never copied into layers).
+system_config.yaml
+**/system_config.yaml
+**/node_modules
+**/.next
+**/.pnpm-store
+**/test-results
+**/.turbo
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.log
+artifacts/
+output/
+tmp/
+dist/
+build/
+coverage/
+
+backups/
+**/backups/
+**/*.sql.gz
+**/*.dump
+# #338 — exclude the old public/VPS deploy dir from image contexts, but KEEP deploy/acceptance/ so the
+# gateapi image can carry its committed init orchestrator + entrypoint (no host-local build input).
+deploy/stitch-vps/

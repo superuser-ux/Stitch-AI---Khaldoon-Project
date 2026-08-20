@@ -1,0 +1,8 @@
+# Mirrors dashboard/pnpm-workspace.yaml: this file exists ONLY to authorise native build scripts
+# under pnpm 10+. It deliberately declares no `packages:` key — workbench/ is a self-contained pnpm
+# project with its own lockfile, exactly like dashboard/. This repo is NOT a monorepo, and #293
+# forbids an implicit monorepo conversion (a root workspace would re-hoist V1's dependency tree and
+# put its `pnpm install --frozen-lockfile` Docker build at risk).
+allowBuilds:
+  esbuild: true
+  sharp: true

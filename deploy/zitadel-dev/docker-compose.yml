@@ -1,0 +1,143 @@
+name: tanaghom-zitadel-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    pull_policy: never
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    environment:
+      POSTGRES_DB: zitadel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/tanaghom-zitadel/current/postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - /run/tanaghom-zitadel:/run/tanaghom-zitadel:ro
+    networks: [iam]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d zitadel -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  zitadel-api:
+    image: ghcr.io/zitadel/zitadel:v4.16.2@sha256:4b68a2106f60baa2895e5a00a77fcd915d29d0db3f0c011d3eb9f99f557b2b48
+    pull_policy: never
+    restart: unless-stopped
+    # Official v4 Compose uses root for start-from-init so it can read the root-only masterkey/config
+    # files and create the Login client PAT in the candidate-owned bootstrap volume.
+    user: "0"
+    cpus: 1.0
+    mem_limit: 768m
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+    command:
+      - start-from-init
+      - --config
+      - /etc/zitadel/zitadel-config.yaml
+      - --config
+      - /run/tanaghom-zitadel/current/zitadel-secrets.yaml
+      - --steps
+      - /run/tanaghom-zitadel/current/first-instance-steps.yaml
+      - --masterkeyFile
+      - /run/tanaghom-zitadel/current/masterkey
+      - --tlsMode
+      - disabled
+    volumes:
+      - ./zitadel-config.yaml:/etc/zitadel/zitadel-config.yaml:ro
+      - /run/tanaghom-zitadel:/run/tanaghom-zitadel:ro
+      - login_bootstrap:/zitadel/bootstrap
+    networks: [iam]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # The ready subcommand is a separate process and does not inherit start-from-init flags.
+      # Loading the non-secret config keeps its TLS/port probe aligned with the HTTP server.
+      test: ["CMD", "/app/zitadel", "ready", "--config", "/etc/zitadel/zitadel-config.yaml"]
+      interval: 10s
+      timeout: 30s
+      # The failed long run proved all setup migrations completed in about 15 seconds; five minutes
+      # retains a large DEV margin without masking a broken readiness contract.
+      retries: 30
+      start_period: 30s
+
+  zitadel-login:
+    image: ghcr.io/zitadel/zitadel-login:v4.16.2@sha256:f35e20cf3edd4a45a44c548b887c58304b350ed56078546735015f5cd17eef75
+    pull_policy: never
+    restart: unless-stopped
+    # The API creates the Login client PAT root-only in the shared bootstrap volume.
+    user: "0"
+    cpus: 0.5
+    mem_limit: 384m
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
+    environment:
+      ZITADEL_API_URL: http://zitadel-api:8080
+      NEXT_PUBLIC_BASE_PATH: /ui/v2/login
+      ZITADEL_SERVICE_USER_TOKEN_FILE: /zitadel/bootstrap/login-client.pat
+      CUSTOM_REQUEST_HEADERS: Host:iam.localhost,X-Forwarded-Proto:http
+    volumes:
+      - login_bootstrap:/zitadel/bootstrap:ro
+    networks: [iam]
+    depends_on:
+      zitadel-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "node /app/healthcheck.mjs http://localhost:3000/ui/v2/login/healthy"]
+      interval: 10s
+      timeout: 30s
+      retries: 18
+      start_period: 30s
+
+  caddy:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    pull_policy: never
+    restart: unless-stopped
+    cpus: 0.25
+    mem_limit: 128m
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "127.0.0.1:18210:13210"
+    networks:
+      iam:
+        aliases: [iam.localhost]
+    depends_on:
+      zitadel-api:
+        condition: service_healthy
+      zitadel-login:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:13210/ui/v2/login/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  postgres_data:
+  login_bootstrap:
+
+networks:
+  iam:
+    name: tanaghom-iam-dev
+    driver: bridge

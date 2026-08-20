@@ -1,0 +1,70 @@
+# Tanaghom — local stack (Foundation step). Runs on Windows + Docker Desktop (WSL2).
+# Start:  docker compose up -d
+# Core services need no GPU. GPU services (local models) are under the "gpu" profile.
+
+services:
+  # --- Database: Postgres + pgvector (workflow state, slots, methodology, dedup) ---
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: tanaghom-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-tanaghom}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-tanaghom}
+    ports:
+      - "${DB_PORT:-5432}:5432"   # host port configurable; set DB_PORT in .env if 5432 is taken
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d   # put schema.sql + seed here
+
+  # --- Adminer: simple web UI to SEE the data (non-technical friendly) ---
+  adminer:
+    image: adminer
+    container_name: tanaghom-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"     # open http://localhost:8080  (server: db)
+
+  # --- n8n: the glue/automation layer (Telegram wiring, schedules, later POSTIZ) ---
+  n8n:
+    image: n8nio/n8n
+    container_name: tanaghom-n8n
+    restart: unless-stopped
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      GENERIC_TIMEZONE: Asia/Dubai
+    ports:
+      - "${N8N_PORT_HOST:-5678}:5678"   # host port configurable; 5678 is often taken — set N8N_PORT_HOST in .env
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  # --- (Optional, later) Ollama: local LLMs/embeddings on the RTX 3090 ---
+  # Enable with:  docker compose --profile gpu up -d
+  ollama:
+    image: ollama/ollama
+    container_name: tanaghom-ollama
+    restart: unless-stopped
+    profiles: ["gpu"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+
+  # --- Placeholders the build will fill (Steps 2–4) ---
+  # app:        the orchestrator + agents (built from Phase1_Build_Spec)
+  # dashboard:  the Next.js review UI
+  # (added by the build agent; kept out of Foundation to stay simple)
+
+volumes:
+  db_data:
+  n8n_data:
+  ollama_data:

@@ -1,0 +1,229 @@
+{
+  "directive": 376,
+  "title": "calendar-first run planning + governed mix recommendation UX — acceptance matrix",
+  "source": "origin/main@eacc9b830fa359f2297c46b6c78c60d7ccb0dee5",
+  "topology": "#370 fail-closed candidate lane in FIXTURE=zero-run mode (EXPECT_SHA, served-source binding, dependency lock, six-category ledger, before/after inventory, native exits); browser → real workbench → canonical /gw → exact-head stub gate API → disposable synthetic Postgres. Zero-run is mandatory here: CAL-01 and FIX-01 are unprovable on a lane that pre-provisions runs.",
+  "declared_universe": "The V2 run-planning surface at this exact source. Dimensions: entry path {date click, inclusive range selection, New run} × recommendation state {recommended, amended, blocked} × presentation lens {Calendar, Grid, List} × governed configuration {active-stage projection, production terminology} × durability {nothing before submit, immutable after submit}.",
+  "reduction_method": "One row per distinct governed MEANING rather than per control permutation: each entry path once (they converge on one composer, so a third proof of the same state machine adds nothing), each recommendation outcome once, lens parity as a single identity assertion across all three lenses. Exhaustive Cartesian is impractical and is not claimed.",
+  "excluded_combinations": "Rows already green in the #372/#373 matrices (Topic/Script lifecycle, focus restoration, direction/theme, 375/768/1280 reachability, stale-token conflict) are CITED, not re-executed. #377's authority internals are proven by gates/run_mix_selftest.py (150 checks) and are not re-proven through a browser.",
+  "binding_predeclarations": [
+    {
+      "id": "PRE-376-01",
+      "ruling": "Codex reconciliation ruling A",
+      "statement": "The stage rail consumes the CANONICAL ACTIVE-STAGE PROJECTION (`/gw/workflow-stages/active-enabled`), which returns only the stages the resolved active generation enables. The client performs no fetch-all-and-filter and holds no omission list. `/workflow-stages/active` is preserved unchanged for existing consumers, and STG-01 reads BOTH so 'absent' is proven to mean 'disabled in the generation' rather than 'never declared'."
+    },
+    {
+      "id": "PRE-376-02",
+      "ruling": "Codex reconciliation ruling B",
+      "statement": "Production-readiness terminology is ONE governed `stage_label` value — `Approved for production` — established through the authorized draft → update → activate generation path and rendered verbatim. No frontend alias, no derived completion label, no seed rewrite, no new schema field, and no in-place mutation of an active generation."
+    },
+    {
+      "id": "PRE-376-03",
+      "ruling": "GPT amendment 4 + Codex review 4766819179 [P1]",
+      "statement": "NOTHING durable exists before the explicit Plan run. The composer's date gestures issue no upstream request at all, and the recommendation PREVIEW (`POST /run-mix-recommendation-preview`) is SIDE-EFFECT-FREE: it persists no proposal, no audit event and no reserved identifier — it is a pure calculation the operator inspects. The durable single-use proposal fence AND the run are created ONLY by the explicit Plan run, which mints the proposal (gated on the previewed generations still being current) and binds it into the round. CAL-02/CAL-03 assert zero durable state (rounds, slots, proposals) after the gesture; MIX-01 asserts the recommendation is visible before any operator mix input AND that the preview created no proposal, no audit event and no run; MIX-04 asserts the preview→submit stale gate fails closed. The earlier revision that let `Get recommended mix` persist a proposal is corrected here."
+    },
+    {
+      "id": "PRE-376-04",
+      "ruling": "Codex reconciliation ruling D",
+      "statement": "MIX-01 and MIX-03 use DELIBERATELY DISTINCT governed setup and neither may masquerade as the other. MIX-03 runs FIRST, on a lane with NO current recommendation-policy generation, and proves the typed blocked state and that nothing was persisted. A policy generation is then minted through the authority's own authorized path, and MIX-01 proves the recommended path. The lane never pre-mints the policy for this run."
+    },
+    {
+      "id": "PRE-376-05",
+      "ruling": "Codex reconciliation ruling C",
+      "statement": "The commit floor stays OUT OF SCOPE. No browser commit/resolve/advance control is implemented, claimed, or asserted. GAP-02 remains the mechanism; GAP-07 records only its human-UAT consequence."
+    },
+    {
+      "id": "PRE-376-06",
+      "ruling": "Codex reconciliation ruling E",
+      "statement": "The retained human-UAT lane is created only AFTER the full automated matrix and the induced-failure/teardown evidence pass. Automated green declares no human acceptance. FIX-01 asserts the lane SHAPE (zero runs, valid active generation, baseline eligibility, current recommendation policy, no unrelated fixtures) at the start of the run, before the matrix creates anything."
+    }
+  ],
+  "categories": ["passed", "failed", "timedOut", "interrupted", "skipped", "flaky"],
+  "acceptance_rule": "Every mandatory row passed; all other categories zero; serial, one worker, zero retries; native exits unmasked. Rows classified unrepresentable/deferred are predeclared and are NEVER counted as passed functionality.",
+  "rows": [
+    {
+      "id": "FIX-01",
+      "mandatory": true,
+      "surface": "candidate lane",
+      "nav": "/",
+      "prerequisite": "FIXTURE=zero-run lane, governed workflow generation established",
+      "action": "read the lane's own state before the matrix creates anything",
+      "input_class": "valid",
+      "expected_route": "GET /gw/rounds, /gw/workflow-stages/active-enabled, /gw/baseline-eligibility (browser-issued)",
+      "expected_typed_result": "zero runs; a valid active generation with navigable stages; non-empty baseline eligibility",
+      "expected_ui": "the root renders the calendar workspace, not a text-only empty card",
+      "expected_persistence": "independently confirmed by a browser-issued read",
+      "gap": null
+    },
+    {
+      "id": "CAL-01",
+      "mandatory": true,
+      "surface": "RunsCalendarSeam",
+      "nav": "/",
+      "prerequisite": "zero runs",
+      "action": "open the root",
+      "input_class": "boundary (empty set)",
+      "expected_route": "GET /gw/rounds",
+      "expected_typed_result": "[]",
+      "expected_ui": "the runs calendar grid renders WITH an explicit zero-run statement; the New run entry is present",
+      "expected_persistence": "n/a — a read",
+      "gap": null
+    },
+    {
+      "id": "CAL-02",
+      "mandatory": true,
+      "surface": "RunsCalendar → RunComposer",
+      "nav": "/",
+      "prerequisite": "zero runs",
+      "action": "click a single date cell on the calendar",
+      "input_class": "valid",
+      "expected_route": "NONE — the gesture issues no upstream request",
+      "expected_typed_result": "one-day inclusive draft (starts_on == ends_on)",
+      "expected_ui": "the composer opens with data-source=date-click and a 1-day preview",
+      "expected_persistence": "ZERO durable writes: the run set, the slot set and the proposal set are all unchanged",
+      "gap": null
+    },
+    {
+      "id": "CAL-03",
+      "mandatory": true,
+      "surface": "RunsCalendar → RunComposer",
+      "nav": "/",
+      "prerequisite": "zero runs",
+      "action": "drag-select an inclusive multi-day range",
+      "input_class": "valid",
+      "expected_route": "NONE — the gesture issues no upstream request",
+      "expected_typed_result": "the inclusive range defines the duration; expected slots = days × posts/day",
+      "expected_ui": "composer data-source=range with the inclusive dates, derived days, posts/day, expected slots and coverage preview",
+      "expected_persistence": "ZERO durable writes before submit",
+      "gap": null
+    },
+    {
+      "id": "MIX-03",
+      "mandatory": true,
+      "surface": "RunComposer",
+      "nav": "/",
+      "prerequisite": "NO current run-mix recommendation-policy generation (ruling D)",
+      "action": "request the governed recommendation",
+      "input_class": "boundary (authority unavailable)",
+      "expected_route": "POST /gw/run-mix-proposals (browser-issued)",
+      "expected_typed_result": "{status: blocked, reason: no_current_recommendation_policy}",
+      "expected_ui": "the typed reason is displayed, submit is DISABLED, and the draft is preserved",
+      "expected_persistence": "nothing persisted — the proposal table is still empty",
+      "gap": null
+    },
+    {
+      "id": "MIX-01",
+      "mandatory": true,
+      "surface": "RunComposer",
+      "nav": "/",
+      "prerequisite": "a current recommendation-policy generation minted through the authority's authorized path (ruling D)",
+      "action": "request the governed recommendation (side-effect-free preview)",
+      "input_class": "valid",
+      "expected_route": "POST /gw/run-mix-recommendation-preview (browser-issued)",
+      "expected_typed_result": "{status: recommended, preview: true} with non-zero counts summing to the expected slots, and a preview_fingerprint",
+      "expected_ui": "the recommended counts, the rationale statement, the deterministic/not-AI posture, and generation provenance (policy + baseline generation) are visible BEFORE any operator mix input; the provenance states the proposal is minted on Plan run",
+      "expected_persistence": "DISCRIMINATING: after preview, /gw/rounds is still empty (no run, no slots) AND no proposal was created — the preview persisted nothing at all",
+      "gap": null
+    },
+    {
+      "id": "MIX-04",
+      "mandatory": true,
+      "surface": "RunComposer",
+      "nav": "/",
+      "prerequisite": "MIX-01 preview on screen",
+      "action": "the governed policy generation is superseded (governed setup) AFTER the preview, then Plan run",
+      "input_class": "boundary (preview/submit drift)",
+      "expected_route": "POST /gw/run-mix-proposals with the stale expected fingerprint (browser-issued)",
+      "expected_typed_result": "{code: recommendation_stale} 409",
+      "expected_ui": "a typed stale state is shown, submit is disabled, and the draft is preserved with an instruction to re-request the recommendation",
+      "expected_persistence": "fail closed: NO run, NO slots and NO proposal were created by the stale submit",
+      "gap": null
+    },
+    {
+      "id": "MIX-02",
+      "mandatory": true,
+      "surface": "RunComposer",
+      "nav": "/",
+      "prerequisite": "MIX-01 recommendation on screen",
+      "action": "amend the recommended counts, then Plan run",
+      "input_class": "valid",
+      "expected_route": "Plan run: POST /gw/run-mix-proposals (mints the fence, gated on the previewed fingerprint) then POST /gw/rounds with proposal_id (both browser-issued)",
+      "expected_typed_result": "200 {round_id}",
+      "expected_ui": "navigates to the created run's schedule stage",
+      "expected_persistence": "after reload, GET /gw/rounds/{id}/recommendation-snapshot returns status=recorded with the ORIGINAL recommended mix, the SUBMITTED mix, the amendment flag, and the generations in force — resolved from the pinned snapshot, never recomputed",
+      "gap": null
+    },
+    {
+      "id": "RNG-01",
+      "mandatory": true,
+      "surface": "RunScheduleWorkspace",
+      "nav": "/runs/{id}?stage=schedule_review&focus=range",
+      "prerequisite": "the run created by MIX-02",
+      "action": "observe the schedule the creation navigated to",
+      "input_class": "valid",
+      "expected_route": "GET /gw/rounds/{id} (browser-issued)",
+      "expected_typed_result": "the server's accepted starts_on / period_len_days",
+      "expected_ui": "the workspace opens in the range view anchored on the run's OWN accepted inclusive span, not a default window",
+      "expected_persistence": "the focused range equals the server's accepted span, not the client's proposal",
+      "gap": null
+    },
+    {
+      "id": "VIEW-01",
+      "mandatory": true,
+      "surface": "RunScheduleWorkspace lens",
+      "nav": "/runs/{id}?stage=schedule_review",
+      "prerequisite": "a run with slots",
+      "action": "switch Calendar → Grid → List through the visible lens controls",
+      "input_class": "valid",
+      "expected_route": "NONE — a lens switch issues no upstream request",
+      "expected_typed_result": "identical canonical slot IDs in identical order in all three lenses",
+      "expected_ui": "each lens renders and reports the same data-slot-order; an applied filter is preserved across the switch",
+      "expected_persistence": "no slot is mutated by any switch",
+      "gap": null
+    },
+    {
+      "id": "STG-01",
+      "mandatory": true,
+      "surface": "stage rail",
+      "nav": "/runs/{id}",
+      "prerequisite": "the #376 governed generation (sign-off stages disabled)",
+      "action": "read the rail and both governed endpoints",
+      "input_class": "valid",
+      "expected_route": "GET /gw/workflow-stages/active-enabled and /gw/workflow-stages/active (browser-issued)",
+      "expected_typed_result": "the projection omits native_review/scholar_review; the full contract still declares them with enabled=false",
+      "expected_ui": "Language sign-off and Religious sign-off are ABSENT from the rail — not rendered-and-disabled",
+      "expected_persistence": "absence is caused by the governed generation, proven by reading both endpoints",
+      "gap": null
+    },
+    {
+      "id": "STG-02",
+      "mandatory": true,
+      "surface": "stage rail",
+      "nav": "/runs/{id}",
+      "prerequisite": "the #376 governed generation (final_review relabelled)",
+      "action": "read the governed label for the final_review stage",
+      "input_class": "valid",
+      "expected_route": "GET /gw/workflow-stages/active-enabled (browser-issued)",
+      "expected_typed_result": "stage_label == 'Approved for production'",
+      "expected_ui": "the rail renders the governed label verbatim and 'Publish approval' appears nowhere",
+      "expected_persistence": "the label lives in the activated generation; the previous generation is superseded, never edited",
+      "gap": null
+    }
+  ],
+  "gap_register": [
+    {
+      "id": "GAP-07",
+      "row": "PRE-376-05",
+      "item": "end-to-end human progression beyond Schedule",
+      "classification": "human-UAT consequence — out of scope by ruling C",
+      "note": "CONSEQUENCE of GAP-02 (which remains the mechanism: no commit/resolve/advance path exists in resolveAllowedWritePath and no control is rendered). Recorded once, here, so the register does not carry the same fact twice: because stage advancement is governed setup, a human cannot drive Schedule → Topic → Script unaided, so end-to-end progression cannot be accepted through governed setup alone. Resolving it needs a separate approved product directive."
+    },
+    {
+      "id": "GAP-01..GAP-06",
+      "row": null,
+      "item": "carried forward unchanged from the #372/#373 registers",
+      "classification": "cited, not restated",
+      "note": "GAP-01 restore_revision unrepresentable-by-design; GAP-02 the commit floor is not a V2 control; GAP-03 no focus trap; GAP-04 no unauthenticated browser posture; GAP-05 no distinct 768/1280 layouts; GAP-06 RTL direction does not persist across reload."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+# Never commit runtime env/secrets for this lane.
+.env
+.env.*
+!.env.example
+
+# Build/transfer outputs (produced by stage.sh; assembled at the candidate path, never committed).
+images/
+*.oci.tar
+MANIFEST.txt

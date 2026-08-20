@@ -1,0 +1,37 @@
+{
+  "name": "tanaghom-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "description": "V2 workbench — transition-lane frontend over the same Tanaghom API authority. Not a second product (#293 Stage 0).",
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "dev": "node scripts/preflight-port.mjs && next dev -p $(node scripts/preflight-port.mjs --print)",
+    "build": "next build",
+    "start": "node scripts/preflight-port.mjs && next start -p $(node scripts/preflight-port.mjs --print)",
+    "typecheck": "tsc --noEmit",
+    "verify:brand": "node scripts/verify-brand.mjs",
+    "preflight": "node scripts/preflight-port.mjs",
+    "gate:regression": "playwright test --project=product-regression",
+    "gate:acceptance": "playwright test --project=synthetic-acceptance",
+    "gate:discovery": "playwright test --list",
+    "validate": "node scripts/verify-brand.mjs && tsc --noEmit && next build"
+  },
+  "dependencies": {
+    "@fullcalendar/react": "7.0.0",
+    "@xyflow/react": "^12.11.1",
+    "next": "15.4.11",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "temporal-polyfill": "1.0.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "22.10.2",
+    "@types/react": "19.0.2",
+    "@types/react-dom": "19.0.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
+    "typescript": "5.7.2"
+  }
+}

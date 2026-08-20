@@ -1,0 +1,183 @@
+{
+  "directive": 376,
+  "source": "origin/main@eacc9b830fa359f2297c46b6c78c60d7ccb0dee5",
+  "generated_from": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json",
+  "declared_universe": "The V2 run-planning surface at this exact source. Dimensions: entry path {date click, inclusive range selection, New run} × recommendation state {recommended, amended, blocked} × presentation lens {Calendar, Grid, List} × governed configuration {active-stage projection, production terminology} × durability {nothing before submit, immutable after submit}.",
+  "reduction_method": "One row per distinct governed MEANING rather than per control permutation: each entry path once (they converge on one composer, so a third proof of the same state machine adds nothing), each recommendation outcome once, lens parity as a single identity assertion across all three lenses. Exhaustive Cartesian is impractical and is not claimed.",
+  "excluded_combinations": "Rows already green in the #372/#373 matrices (Topic/Script lifecycle, focus restoration, direction/theme, 375/768/1280 reachability, stale-token conflict) are CITED, not re-executed. #377's authority internals are proven by gates/run_mix_selftest.py (150 checks) and are not re-proven through a browser.",
+  "binding_predeclarations": [
+    {
+      "id": "PRE-376-01",
+      "ruling": "Codex reconciliation ruling A",
+      "statement": "The stage rail consumes the CANONICAL ACTIVE-STAGE PROJECTION (`/gw/workflow-stages/active-enabled`), which returns only the stages the resolved active generation enables. The client performs no fetch-all-and-filter and holds no omission list. `/workflow-stages/active` is preserved unchanged for existing consumers, and STG-01 reads BOTH so 'absent' is proven to mean 'disabled in the generation' rather than 'never declared'."
+    },
+    {
+      "id": "PRE-376-02",
+      "ruling": "Codex reconciliation ruling B",
+      "statement": "Production-readiness terminology is ONE governed `stage_label` value — `Approved for production` — established through the authorized draft → update → activate generation path and rendered verbatim. No frontend alias, no derived completion label, no seed rewrite, no new schema field, and no in-place mutation of an active generation."
+    },
+    {
+      "id": "PRE-376-03",
+      "ruling": "GPT amendment 4 + Codex review 4766819179 [P1]",
+      "statement": "NOTHING durable exists before the explicit Plan run. The composer's date gestures issue no upstream request at all, and the recommendation PREVIEW (`POST /run-mix-recommendation-preview`) is SIDE-EFFECT-FREE: it persists no proposal, no audit event and no reserved identifier — it is a pure calculation the operator inspects. The durable single-use proposal fence AND the run are created ONLY by the explicit Plan run, which mints the proposal (gated on the previewed generations still being current) and binds it into the round. CAL-02/CAL-03 assert zero durable state (rounds, slots, proposals) after the gesture; MIX-01 asserts the recommendation is visible before any operator mix input AND that the preview created no proposal, no audit event and no run; MIX-04 asserts the preview→submit stale gate fails closed. The earlier revision that let `Get recommended mix` persist a proposal is corrected here."
+    },
+    {
+      "id": "PRE-376-04",
+      "ruling": "Codex reconciliation ruling D",
+      "statement": "MIX-01 and MIX-03 use DELIBERATELY DISTINCT governed setup and neither may masquerade as the other. MIX-03 runs FIRST, on a lane with NO current recommendation-policy generation, and proves the typed blocked state and that nothing was persisted. A policy generation is then minted through the authority's own authorized path, and MIX-01 proves the recommended path. The lane never pre-mints the policy for this run."
+    },
+    {
+      "id": "PRE-376-05",
+      "ruling": "Codex reconciliation ruling C",
+      "statement": "The commit floor stays OUT OF SCOPE. No browser commit/resolve/advance control is implemented, claimed, or asserted. GAP-02 remains the mechanism; GAP-07 records only its human-UAT consequence."
+    },
+    {
+      "id": "PRE-376-06",
+      "ruling": "Codex reconciliation ruling E",
+      "statement": "The retained human-UAT lane is created only AFTER the full automated matrix and the induced-failure/teardown evidence pass. Automated green declares no human acceptance. FIX-01 asserts the lane SHAPE (zero runs, valid active generation, baseline eligibility, current recommendation policy, no unrelated fixtures) at the start of the run, before the matrix creates anything."
+    }
+  ],
+  "playwright_categories": {
+    "passed": 12,
+    "failed": 0,
+    "timedOut": 0,
+    "interrupted": 0,
+    "skipped": 0,
+    "flaky": 0
+  },
+  "matrix_result_counts": {
+    "passed": 12
+  },
+  "mandatory_total": 12,
+  "mandatory_passed": 12,
+  "mandatory_not_passed": [],
+  "rows": [
+    {
+      "id": "FIX-01",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "FIX-01 the lane starts genuinely clean: zero runs, a valid active generation, real eligibility",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "CAL-01",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "CAL-01 the root opens on the runs calendar even with zero runs",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "CAL-02",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "CAL-02 a date click initializes a one-day draft and writes NOTHING",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "CAL-03",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "CAL-03 an inclusive range selection sets the duration and previews the plan, writing NOTHING",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "MIX-03",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "MIX-03 with NO current policy generation the recommendation is typed-blocked and submit stays disabled",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "MIX-01",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "MIX-01 the side-effect-free preview shows the governed mix, rationale and provenance and persists NOTHING",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "MIX-04",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "MIX-04 policy drift between preview and submit fails closed — no run, no proposal",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "MIX-02",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "MIX-02 an amended mix is planner-validated and snapshotted immutably with the run",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "RNG-01",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "RNG-01 the created run opens focused on its own accepted inclusive range",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "VIEW-01",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "VIEW-01 Calendar, Grid and List are projections of ONE authoritative slot collection",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "STG-01",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "STG-01 stages the governed generation disables are ABSENT from the rail",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    },
+    {
+      "id": "STG-02",
+      "mandatory": true,
+      "journey": null,
+      "executed_test": "STG-02 production-readiness terminology comes from the governed generation, verbatim",
+      "executed_file": "v376-run-planning.spec.ts",
+      "result": "passed",
+      "evidence_artifact": "/var/folders/xt/mzr69xq953vfsxsb5045_7pc0000gn/T/v2val-v376b-406dz7/proof-v376b.json"
+    }
+  ],
+  "gap_register": [
+    {
+      "id": "GAP-07",
+      "row": "PRE-376-05",
+      "item": "end-to-end human progression beyond Schedule",
+      "classification": "human-UAT consequence — out of scope by ruling C",
+      "note": "CONSEQUENCE of GAP-02 (which remains the mechanism: no commit/resolve/advance path exists in resolveAllowedWritePath and no control is rendered). Recorded once, here, so the register does not carry the same fact twice: because stage advancement is governed setup, a human cannot drive Schedule → Topic → Script unaided, so end-to-end progression cannot be accepted through governed setup alone. Resolving it needs a separate approved product directive."
+    },
+    {
+      "id": "GAP-01..GAP-06",
+      "row": null,
+      "item": "carried forward unchanged from the #372/#373 registers",
+      "classification": "cited, not restated",
+      "note": "GAP-01 restore_revision unrepresentable-by-design; GAP-02 the commit floor is not a V2 control; GAP-03 no focus trap; GAP-04 no unauthenticated browser posture; GAP-05 no distinct 768/1280 layouts; GAP-06 RTL direction does not persist across reload."
+    }
+  ],
+  "recommendation": "ACCEPT",
+  "recommendation_basis": "every mandatory row passed and all other Playwright categories are zero",
+  "production_media_authorization": "NOT AUTHORIZED by this bundle. Passing #372 authorizes drafting/starting the Production/media vertical-slice directive; it claims no production readiness, no external integration readiness, and no complete SDR delivery."
+}

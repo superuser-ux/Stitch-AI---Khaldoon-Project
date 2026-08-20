@@ -1,0 +1,105 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: tanaghom-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-tanaghom}
+      # SINGLE credential source (#202 review): the one host DB_PASSWORD is interpolated here as
+      # POSTGRES_PASSWORD and into gateapi as DB_PASSWORD — drift between two host values would
+      # leave containers Up while the API fails DB authentication.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in deploy/stitch-vps/.env}
+      POSTGRES_DB: ${DB_NAME:-tanaghom}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  gateapi:
+    build:
+      context: ../..
+      dockerfile: deploy/stitch-vps/Dockerfile.api
+    container_name: tanaghom-gateapi
+    restart: unless-stopped
+    volumes:
+      - ./config/system_config.yaml:/work/system_config.yaml:ro
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-tanaghom}
+      DB_NAME: ${DB_NAME:-tanaghom}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in deploy/stitch-vps/.env}
+      GROQ_BASE_URL: ${GROQ_BASE_URL}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      REVIEWER_PROXY_SECRET: ${REVIEWER_PROXY_SECRET}
+      TANAGHOM_DEV_MODE: ${TANAGHOM_DEV_MODE:-0}
+      # Empty means live. Python treats the non-empty string "0" as true.
+      TANAGHOM_WRITER_STUB: ${TANAGHOM_WRITER_STUB:-}
+      TANAGHOM_OIDC_ISSUER: ${TANAGHOM_OIDC_ISSUER:-}
+      # #250 — restricted read-only SDAM (ResourceSpace) principal for live handoff reads.
+      # Empty = this runtime truthfully reports "not configured" (readiness visibility still
+      # works from persisted observations). Values live in the operator-provisioned .env only.
+      RESOURCESPACE_BASE_URL: ${RESOURCESPACE_BASE_URL:-}
+      RESOURCESPACE_API_USER: ${RESOURCESPACE_API_USER:-}
+      RESOURCESPACE_API_KEY: ${RESOURCESPACE_API_KEY:-}
+      # #259 S2 — least-privilege WRITE principal for completed-edit registration (field-scoped
+      # F99/F100, create-at-Pending, no delete). Empty = registration is truthfully unavailable.
+      RESOURCESPACE_RW_USER: ${RESOURCESPACE_RW_USER:-}
+      RESOURCESPACE_RW_KEY: ${RESOURCESPACE_RW_KEY:-}
+    depends_on:
+      - db
+    ports:
+      - "127.0.0.1:8009:8000"
+    networks:
+      - internal
+
+  dashboard:
+    build:
+      context: ../..
+      dockerfile: deploy/stitch-vps/Dockerfile.dashboard
+    container_name: tanaghom-dashboard
+    restart: unless-stopped
+    environment:
+      API_BASE: http://gateapi:8000
+      REVIEWER_PROXY_SECRET: ${REVIEWER_PROXY_SECRET}
+      TANAGHOM_DEV_MODE: ${TANAGHOM_DEV_MODE:-0}
+      CLIENT_TRIAL_MODE: ${CLIENT_TRIAL_MODE:-false}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in deploy/stitch-vps/.env}
+      # Build identity is RUNTIME truth (#202): stamp the exact deployed revision at container
+      # (re)creation — never a bake-time arg, which goes stale when containers are recreated
+      # from an older image and can't be derived in-image (the build context excludes .git).
+      TANAGHOM_BUILD_SHA: ${TANAGHOM_BUILD_SHA:-}
+      TANAGHOM_OIDC_ENABLED: ${TANAGHOM_OIDC_ENABLED:-false}
+      TANAGHOM_OIDC_ISSUER: ${TANAGHOM_OIDC_ISSUER:-}
+      TANAGHOM_OIDC_CLIENT_ID: ${TANAGHOM_OIDC_CLIENT_ID:-}
+      TANAGHOM_OIDC_CLIENT_SECRET: ${TANAGHOM_OIDC_CLIENT_SECRET:-}
+      TANAGHOM_OIDC_REDIRECT_URI: ${TANAGHOM_OIDC_REDIRECT_URI:-}
+      TANAGHOM_SESSION_SECRET: ${TANAGHOM_SESSION_SECRET:-}
+    depends_on:
+      - gateapi
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - internal
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: tanaghom-proxy
+    restart: unless-stopped
+    depends_on:
+      - dashboard
+    ports:
+      - "80:80"
+    environment:
+      PUBLIC_SERVER_NAME: ${PUBLIC_SERVER_NAME:-_}
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks:
+      - internal
+
+volumes:
+  db_data:
+
+networks:
+  internal:
+    driver: bridge

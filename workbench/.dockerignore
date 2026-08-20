@@ -1,0 +1,16 @@
+# #338 — workbench image build context exclusions. The build context is `workbench/` (a self-contained
+# pnpm project). Exclude everything the reproducible build regenerates or must never ship at runtime:
+# installed deps, prior build output, tests, and any stray secret/env file.
+.git
+.env
+.env.*
+node_modules
+.next
+.pnpm-store
+test-results
+playwright-report
+e2e
+Dockerfile
+.dockerignore
+**/*.log
+.DS_Store

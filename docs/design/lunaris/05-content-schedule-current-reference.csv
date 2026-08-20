@@ -1,0 +1,29 @@
+week,day,post_9am,format_9am,post_8pm,format_8pm
+1,1,P1.1.1,Reel - Studio,P2.1.1,Carousel
+1,2,P2.2.1,Reel - iPhone,P1.2.1,Reel - Podcast
+1,3,P1.3.1,Reel - Studio,P3.1.1,Carousel
+1,4,P3.2.1,Reel - Podcast,P2.3.1,Reel - iPhone
+1,5,P1.4.1,Reel - Event Cut,P5.1.1,Pic + Caption
+1,6,P2.4.1,Reel - Studio,P1.5.1,Carousel
+1,7,P2.5.1,3sec Reel + Caption,P4.1.1,Reel - Studio
+2,8,P2.6.1,Reel - Studio,P1.6.1,Reel - Studio (was: Reel - iPhone)
+2,9,P1.7.1,Reel - Podcast,P3.3.1,Carousel
+2,10,P3.4.1,Reel - iPhone,P2.7.1,Reel - Studio
+2,11,P1.8.1,Carousel,P2.8.1,Reel - Event Cut
+2,12,P2.1.2,Reel - Podcast,P1.9.1,Reel - Studio
+2,13,P1.10.1,Reel - Studio,P5.2.1,Pic + Caption
+2,14,P4.2.1,Carousel,P3.5.1,Carousel (was: 3sec Reel + Caption)
+3,15,P1.11.1,Reel - Studio,P2.2.2,Carousel
+3,16,P2.3.2,Reel - iPhone,P3.6.1,Reel - Podcast
+3,17,P1.12.1,Reel - Studio (was: Reel - Event Cut),P2.4.2,Reel - Studio
+3,18,P3.7.1,Carousel,P1.13.1,Reel - iPhone
+3,19,P2.5.2,Reel - Studio,P1.1.2,Reel - Podcast
+3,20,P1.2.2,3sec Reel + Caption,P5.3.1,Pic + Caption
+3,21,P4.3.1,Reel - Studio,P1.3.2,Carousel
+4,22,P2.6.2,Reel - Studio,P1.4.2,Reel - iPhone
+4,23,P1.5.2,Carousel,P3.8.1,Reel - Studio
+4,24,P3.1.2,Reel - iPhone (was: Carousel),P2.7.2,Reel - Event Cut
+4,25,P1.6.2,Reel - Event Cut (was: Reel - Studio),P2.8.2,Reel - iPhone
+4,26,P2.1.3,Reel - Podcast,P1.7.2,3sec Reel + Caption (was: Reel - Studio)
+4,27,P5.4.1,Pic + Caption,P1.8.2,Carousel
+4,28,P4.4.1,Reel - Studio,P1.9.2,3sec Reel + Caption

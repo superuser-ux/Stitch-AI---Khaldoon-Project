@@ -1,0 +1,27 @@
+{
+  "status": "in_sync",
+  "verified_at": "2026-07-01",
+  "verified_by": "codex",
+  "notes": "Pencil Workflow Graph corrected to the Instagram publish target model and the managed Lunaris exports were refreshed from Pencil. Repo shell/lens code was reviewed against those boards after the new-run async race fix.",
+  "pencil_document": "/Users/Kay/.pencil/documents/0be1bf85-e579-428f-82b2-9600c88b3349/pencil-lunaris.pen",
+  "managed_exports": [
+    {
+      "board": "Tanaghom Overview",
+      "node_id": "p2cpN",
+      "export": "docs/design/lunaris/01-overview.png",
+      "sha256": "63f30c56e9039bde2e78db5421d9958e4508a12a0a073417bd2c2da6679268b5"
+    },
+    {
+      "board": "Workflow Graph",
+      "node_id": "gedMY",
+      "export": "docs/design/lunaris/02-workflow.png",
+      "sha256": "f8dba714f3717d8923677f716efe040eef5a1e21d39a5f67131edae2a4a67271"
+    },
+    {
+      "board": "v2 \u2014 Agentic Content OS (vision)",
+      "node_id": "s8RkJ3",
+      "export": "docs/design/lunaris/04-vision-agentic-os.png",
+      "sha256": "f4079ee28b9c08807ffda16a12a839b5b3020d0293d7a44acd0769eb46c2a9a3"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /work
+
+COPY gates/requirements.txt /tmp/gates-requirements.txt
+COPY agents/requirements.txt /tmp/agents-requirements.txt
+RUN pip install -r /tmp/gates-requirements.txt -r /tmp/agents-requirements.txt
+
+COPY . /work
+
+# #338 — exact-SHA provenance. GIT_SHA is the single validated 40-char revision supplied by the build
+# script (which verifies a clean HEAD equals it). The OCI revision LABEL is the immutable provenance;
+# source/title are committed constants, not caller claims. Tag alone is insufficient — the recorded
+# local image ID / OCI archive digest plus this label bind the artifact to the commit.
+ARG GIT_SHA=""
+LABEL org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.source="https://github.com/Kholio/tanaghom" \
+      org.opencontainers.image.title="tanaghom-gateapi"
+# Baked provenance record (matches the OCI revision label). The gateapi exposes no runtime SHA surface,
+# so its identity is the immutable label + local image ID/OCI archive digest; this file documents it.
+RUN printf '%s' "${GIT_SHA}" > /work/BUILD_SHA
+
+# #338 — explicit numeric non-root runtime with a narrowly-owned working tree. uvicorn binds an
+# unprivileged port and the app writes nothing to disk (config is mounted read-only; state is the
+# external DB), so no root capability is required. The DB role used for governed initialization is a
+# separate DB-level privilege, independent of this OS user.
+RUN groupadd --system --gid 10001 gateapi \
+ && useradd --system --uid 10001 --gid 10001 --home-dir /work --no-create-home gateapi \
+ && chown -R 10001:10001 /work \
+ # #338 — a CONTAINER-LOCAL (non-volume) writable state dir for the acceptance init ownership marker.
+ # It lives in the container's writable layer: it survives a same-container restart but is LOST when the
+ # container is recreated, which is exactly the fail-closed boundary for a retained-DB recreate.
+ && mkdir -p /var/lib/tanaghom-acc \
+ && chown 10001:10001 /var/lib/tanaghom-acc
+USER 10001:10001
+
+EXPOSE 8000
+
+# Default command serves only (used by the public topology). The private acceptance topology overrides
+# the entrypoint (deploy/acceptance) to run unchanged governed initialization fail-fast BEFORE uvicorn.
+CMD ["uvicorn", "gates.api:app", "--host", "0.0.0.0", "--port", "8000"]

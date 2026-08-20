@@ -1,0 +1,16 @@
+# Secret scanning — blocks commits that contain API keys, passwords, tokens, etc.
+# Setup (once):  pip install pre-commit  &&  pre-commit install
+# Manual full-history scan:  gitleaks detect --source . -v
+repos:
+  - repo: local
+    hooks:
+      - id: design-sync-guard
+        name: design-sync guard
+        entry: python3 tools/check_design_sync.py
+        language: system
+        pass_filenames: false
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secret scan)

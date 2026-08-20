@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="tanaghomGradient" x1="8" x2="56" y1="8" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f3d289"/>
+      <stop offset="1" stop-color="#b87a2f"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#121212"/>
+  <path d="M17 20h30v6H35v18h-6V26H17z" fill="url(#tanaghomGradient)"/>
+  <path d="M17 44h30v-6H35V20h-6v18H17z" fill="#f7f2e8" opacity=".92"/>
+</svg>

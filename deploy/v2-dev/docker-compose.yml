@@ -1,0 +1,208 @@
+# #389 — PRIVATE, NON-PRODUCTION V2 development/testing lane for the rebuilt STITCH-VPS.
+#
+# PACKAGING ONLY. Authorizes no STITCH-VPS mutation, deployment, or runtime action; a later critical
+# directive (referencing the merged SHA, a fresh host inventory, GPT review, operator approval, CC
+# preflight, and named Codex reconciliation) owns deployment. Neither this file nor its merge grants
+# deployment authority.
+#
+# RUNTIME-ONLY, CANDIDATE-PATH-SELF-CONTAINED (#389 exact-head review correction). This is the exact file
+# that lives at the candidate path /srv/tanaghom-v2-dev. It has NO `build:` stanza and therefore needs NO
+# repository checkout or repo build context at the candidate path — resolving the prior contradiction
+# where build contexts `../..` depended on a repo layout the candidate-path contract forbids. The two app
+# images are produced OFF-HOST from a clean reviewed checkout (deploy/v2-dev/build.sh), exported to
+# immutable OCI archives (deploy/v2-dev/stage.sh), transferred, and `docker load`ed on the host
+# (deploy/v2-dev/load-images.sh, which verifies image ID + OCI revision label). This compose then
+# references them by exact-SHA tag with `pull_policy: never` (fail closed if not loaded — never a silent
+# registry pull). The DB is the digest-pinned upstream image.
+#
+# Isolated, candidate-owned sibling of the local `tanaghom-acc` lane (#337/#338/#342/#351); it never
+# adopts or mutates that namespace or any shared service. Exactly three services: PostgreSQL/pgvector
+# (internal only, no host port), the governed gate API, the V2 workbench. Application ports bind loopback
+# only; the DB has no host port. writer_mode is stub by default; required non-secret topology/build
+# variables fail closed when absent. Secrets are injected at runtime only — never baked into images or
+# committed. The gateapi init orchestrator + entrypoint are baked INTO the image (COPY . /work), so the
+# runtime needs no candidate-path source.
+#
+# Frozen contract (Codex reconciliation, #389):
+#   * namespace .............. tanaghom-v2-dev
+#   * DB image ............... pgvector/pgvector:pg16 pinned to a verified immutable digest (never tag-only)
+#   * app images ............. exact-SHA tag, transferred as immutable OCI archives, pull_policy: never
+#   * loopback ports ......... 127.0.0.1:18110 (API), 127.0.0.1:13101 (workbench); DB no host port
+#   * resource ceilings ...... db 0.75 CPU/640 MiB · gateapi 0.75 CPU/512 MiB · workbench 0.5 CPU/512 MiB
+#                              (aggregate 2.0 CPU / 1.66 GiB) — both top-level cpus/mem_limit and
+#                              deploy.resources.limits so the ceiling binds regardless of the target
+#                              compose's swarm-vs-standalone reading.
+#   * gateapi provenance ..... fatal runtime-SHA guard (expected reviewed SHA == baked /work/BUILD_SHA) in
+#                              deploy/v2-dev/gateapi-entrypoint.sh — packaging behavior, NOT a product
+#                              endpoint.
+name: tanaghom-v2-dev
+
+services:
+  db:
+    # #389 decision 1 — immutable digest pin (resolved locally via docker pull; RepoDigest recorded in the
+    # PR evidence). A mutable tag alone is never acceptable provenance. This freezes the already-selected
+    # pg16 dependency; it is NOT a version change.
+    image: pgvector/pgvector:pg16@sha256:1d533553fefe4f12e5d80c7b80622ba0c382abb5758856f52983d8789179f0fb
+    pull_policy: missing
+    cpus: 0.75
+    mem_limit: 640m
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 640M
+    environment:
+      POSTGRES_USER: ${DB_USER:-tanaghom}
+      # SINGLE credential source: the one host DB_PASSWORD is interpolated here as POSTGRES_PASSWORD and
+      # into gateapi as DB_PASSWORD. Runtime-injected only; never committed.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD (runtime secret) in the v2-dev environment}
+      POSTGRES_DB: ${DB_NAME:-tanaghom}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks: [internal]
+    # DB has NO host-published port (internal network only).
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tanaghom} -d ${DB_NAME:-tanaghom}"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  gateapi:
+    # Transferred image (exact-SHA tag, restored via docker load from the immutable OCI archive). NO
+    # build context. pull_policy: never — fail closed if the archive was not loaded (never a registry pull).
+    image: tanaghom-v2-dev-gateapi:${V2DEV_GIT_SHA:?set V2DEV_GIT_SHA to the exact 40-char build SHA}
+    pull_policy: never
+    # #389 decision 2 — the v2-dev entrypoint (BAKED in the image) runs a FATAL runtime-SHA guard (expected
+    # reviewed SHA vs baked /work/BUILD_SHA) BEFORE the unchanged governed initialization fail-fast, THEN
+    # uvicorn. No separate init service; the public image CMD is unchanged.
+    entrypoint: ["sh", "/work/deploy/v2-dev/gateapi-entrypoint.sh"]
+    cpus: 0.75
+    mem_limit: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-tanaghom}
+      DB_NAME: ${DB_NAME:-tanaghom}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      # #387 — reviewer-proxy secret is delivered memory-resident via the manager-neutral FILE seam, NOT
+      # container env. The host OpenBao materializer (deploy/v2-dev/openbao/) publishes the value to the
+      # read-only tmpfs mount below; the app validates+reads it on every sign/verify and fails closed if
+      # it is missing/insecure/stale. The direct REVIEWER_PROXY_SECRET env is intentionally ABSENT here so
+      # a recreate can neither retain nor require the old container-env authority.
+      REVIEWER_PROXY_SECRET_FILE: /run/tanaghom-secrets/reviewer_proxy_secret
+      REVIEWER_PROXY_SECRET_FILE_MAX_AGE_SECONDS: "900"
+      # Provider credentials use the same manager-neutral, read-only FILE contract. OpenBao remains a
+      # host concern; the application knows only these files and validates each read before use.
+      OPENROUTER_API_KEY_FILE: /run/tanaghom-secrets/openrouter_api_key
+      OPENROUTER_API_KEY_FILE_MAX_AGE_SECONDS: "900"
+      GROQ_API_KEY_FILE: /run/tanaghom-secrets/groq_api_key
+      GROQ_API_KEY_FILE_MAX_AGE_SECONDS: "900"
+      # #389 decision 2 — the reviewed SHA the running artifact must match. Equals V2DEV_GIT_SHA by
+      # construction; a stale image loaded under a newer expected SHA fails closed at startup.
+      TANAGHOM_GATEAPI_EXPECTED_SHA: ${V2DEV_GIT_SHA:?set V2DEV_GIT_SHA}
+      # The ownership proof survives app-image recreation in a candidate-owned volume. It still binds
+      # the exact initialization manifest to PostgreSQL's system identifier and fails closed on drift.
+      TANAGHOM_V2DEV_INIT_MARKER: /var/lib/tanaghom-acc/v2dev-marker
+      # #414 — ordinary startup (init_db.py) is DB-read-only. Synthetic fixtures are seeded ONLY by the
+      # explicit deploy/v2-dev/init_fixtures.py, which refuses unless BOTH of these declare the synthetic
+      # developer lane (plus an explicit --confirm). Its evidence marker lives beside the ownership marker
+      # on the candidate-owned volume so it survives gate recreation. All three are non-secret literals.
+      TANAGHOM_LANE_ID: "v2-dev-389"
+      TANAGHOM_DATA_CLASS: "synthetic"
+      TANAGHOM_V2DEV_FIXTURE_MARKER: /var/lib/tanaghom-acc/v2dev-fixture-marker
+      TANAGHOM_DEV_MODE: "1"
+      # Human IAM proves identity only; the gate API continues to own every product authorization.
+      # The canonical issuer is required for audited identity-binding administration when IAM is on.
+      TANAGHOM_OIDC_ISSUER: ${TANAGHOM_OIDC_ISSUER:-http://iam.localhost:13210}
+      TANAGHOM_CONFIG: /work/system_config.example.yaml
+      PYTHONPATH: /work
+    volumes:
+      # #387 — read-only host tmpfs bind carrying the exact materializer allowlist. The host dir (0500)
+      # + files (0400) are owned 10001:10001; the container user can read, nothing can write.
+      - /run/tanaghom-secrets:/run/tanaghom-secrets:ro
+      # The image owns this existing directory as numeric UID/GID 10001, so Docker initializes the
+      # empty named volume with the non-root writer ownership required by the entrypoint.
+      - init_marker:/var/lib/tanaghom-acc
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18110:8000"
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 40s
+
+  workbench:
+    # Transferred image (exact-SHA tag). NO build context. pull_policy: never.
+    image: tanaghom-v2-dev-workbench:${V2DEV_GIT_SHA:?set V2DEV_GIT_SHA}
+    pull_policy: never
+    cpus: 0.5
+    mem_limit: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    environment:
+      API_BASE: http://gateapi:8000
+      # #387 — memory-resident reviewer-proxy secret via the manager-neutral FILE seam (see gateapi).
+      # Direct REVIEWER_PROXY_SECRET env is intentionally ABSENT so a recreate cannot retain/require it.
+      REVIEWER_PROXY_SECRET_FILE: /run/tanaghom-secrets/reviewer_proxy_secret
+      REVIEWER_PROXY_SECRET_FILE_MAX_AGE_SECONDS: "900"
+      # #388-B — provider-pluggable OIDC for V2. Disabled by default; enabling it requires the
+      # separately materialized IAM session secret below and a configured issuer/client/redirect.
+      TANAGHOM_OIDC_ENABLED: ${TANAGHOM_OIDC_ENABLED:-false}
+      TANAGHOM_OIDC_ISSUER: ${TANAGHOM_OIDC_ISSUER:-http://iam.localhost:13210}
+      # Server-only transport route. Browser redirects and token issuer validation keep using the
+      # canonical issuer above; only discovery, token exchange, and JWKS fetches use private Caddy DNS.
+      TANAGHOM_OIDC_INTERNAL_BASE_URL: ${TANAGHOM_OIDC_INTERNAL_BASE_URL:-http://caddy:13210}
+      TANAGHOM_OIDC_CLIENT_ID: ${TANAGHOM_OIDC_CLIENT_ID:-}
+      TANAGHOM_OIDC_REDIRECT_URI: ${TANAGHOM_OIDC_REDIRECT_URI:-http://127.0.0.1:13101/api/auth/callback}
+      TANAGHOM_OIDC_POST_LOGOUT_REDIRECT_URI: ${TANAGHOM_OIDC_POST_LOGOUT_REDIRECT_URI:-http://127.0.0.1:13101/}
+      TANAGHOM_SESSION_SECRET_FILE: /run/tanaghom-secrets/iam_session_secret
+      TANAGHOM_SESSION_SECRET_FILE_MAX_AGE_SECONDS: "900"
+      # Public PKCE client: no OIDC client-secret env or FILE authority is configured in this lane.
+      TANAGHOM_DEV_MODE: "1"
+      # This lane serves a FRESH SYNTHETIC database, so it must say so on screen. /api/runtime resolves
+      # data_class to "unknown" unless this exact value is declared, and the banner renders nothing unless
+      # the server reports "synthetic". Both are literal, non-secret, environment-independent, and scoped to
+      # this service only (no anchors/aliases/x-/env_file/merge keys are used anywhere in this file).
+      TANAGHOM_WORKBENCH_DATA_CLASS: "synthetic"
+      TANAGHOM_WORKBENCH_LANE_ID: "v2-dev-389"
+      # TANAGHOM_WORKBENCH_BUILD_SHA is deliberately NOT set — the image bakes the build SHA and the runtime
+      # entrypoint TERMINATES non-zero if a runtime override diverges from it.
+    volumes:
+      # #387 — read-only host tmpfs bind carrying the exact materializer allowlist (see gateapi).
+      - /run/tanaghom-secrets:/run/tanaghom-secrets:ro
+    depends_on:
+      gateapi:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:13101:3001"
+    networks: [internal, iam_private]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3001/api/runtime').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 4s
+      retries: 18
+      start_period: 25s
+
+volumes:
+  db_data:
+  init_marker:
+
+networks:
+  internal:
+    driver: bridge
+  iam_private:
+    external: true
+    name: ${TANAGHOM_IAM_NETWORK:-tanaghom-iam-dev}

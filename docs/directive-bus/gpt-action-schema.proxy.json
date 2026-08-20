@@ -1,0 +1,502 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tanaghom Directive Bus (via proxy)",
+    "description": "Read backlog/report state from and post directive issues to the PRIVATE repo Kholio/tanaghom THROUGH the Cloudflare Worker proxy (which adds the GitHub User-Agent + token). Authenticate to the proxy with the PROXY_SECRET as a Bearer key. A posted issue is a proposal only; Claude Code executes it after a human applies the 'directive:approved' label.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://tanaghom-directive-proxy.kholiosh.workers.dev"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Label": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string"
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "html_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "comments": {
+            "type": "integer"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Label"
+            }
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "pull_request": {
+            "type": "object",
+            "description": "Present only when this item is a pull request, not a plain issue.",
+            "properties": {
+              "html_url": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "string"
+          },
+          "html_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "CreatedIssue": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "html_url": {
+            "type": "string"
+          }
+        }
+      },
+      "PullRequest": {
+        "type": "object",
+        "description": "READ-ONLY view of a pull request. GPT may inspect PR state to plan the next directive; it CANNOT approve, merge, or modify PRs.",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "description": "open | closed"
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "merged": {
+            "type": "boolean"
+          },
+          "mergeable_state": {
+            "type": "string"
+          },
+          "html_url": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "head": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              }
+            }
+          },
+          "base": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "description": "APPROVED | CHANGES_REQUESTED | COMMENTED | DISMISSED | PENDING"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/repos/Kholio/tanaghom/issues": {
+      "get": {
+        "operationId": "listIssues",
+        "summary": "List issues (backlog). PRs also appear here (they carry a pull_request field).",
+        "description": "Read the current backlog to plan the next directive. Filter by state and labels.",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "all"
+              ],
+              "default": "open"
+            },
+            "description": "Which issues to return."
+          },
+          {
+            "name": "labels",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated label names, e.g. 'directive:pending' or 'bug'."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "created",
+                "updated",
+                "comments"
+              ],
+              "default": "created"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of issues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Issue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createDirective",
+        "summary": "Create a directive issue (labelled directive:pending) for Claude Code to execute after human approval.",
+        "description": "Posts a new directive issue. Always creates it with the single label 'directive:pending'. The repository is fixed to Kholio/tanaghom.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "body",
+                  "labels"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Short directive title. MUST start with 'DIRECTIVE: '."
+                  },
+                  "body": {
+                    "type": "string",
+                    "description": "The full directive in Markdown: Objective, Scope, In scope, Out of scope, Hard-stop conditions, Constraints, Acceptance/Output."
+                  },
+                  "labels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "MUST include \"directive:pending\" (the human gate) AND \"agent:gpt\" (attribution). Example: [\"directive:pending\", \"agent:gpt\"]."
+                  },
+                  "assignees": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "GitHub logins to assign the directive to so it lands in their 'Assigned to me' inbox. MUST be [\"Kholio\"] (the operator/approver)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Directive issue created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedIssue"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/Kholio/tanaghom/issues/{issue_number}": {
+      "get": {
+        "operationId": "getIssue",
+        "summary": "Read a single issue (title, body, labels, state).",
+        "parameters": [
+          {
+            "name": "issue_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The issue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/Kholio/tanaghom/issues/{issue_number}/comments": {
+      "get": {
+        "operationId": "listIssueComments",
+        "summary": "Read an issue's comments — this is where Claude Code posts its reports.",
+        "parameters": [
+          {
+            "name": "issue_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of comments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/Kholio/tanaghom/pulls": {
+      "get": {
+        "operationId": "listPullRequests",
+        "summary": "READ-ONLY: list pull requests, to inspect delivery state when planning the next directive.",
+        "description": "Read PR state only. GPT has no ability to approve, merge, or modify PRs.",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "all"
+              ],
+              "default": "open"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of pull requests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PullRequest"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/Kholio/tanaghom/pulls/{pull_number}": {
+      "get": {
+        "operationId": "getPullRequest",
+        "summary": "READ-ONLY: read one pull request (state, draft, merged, mergeable_state).",
+        "parameters": [
+          {
+            "name": "pull_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The pull request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequest"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/Kholio/tanaghom/pulls/{pull_number}/reviews": {
+      "get": {
+        "operationId": "listPullRequestReviews",
+        "summary": "READ-ONLY: read a pull request's reviews (who approved / requested changes).",
+        "parameters": [
+          {
+            "name": "pull_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reviews.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Review"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,420 @@
+# ==========================================================================
+# Tanaghom — System Parameters (single source of flexibility)
+# Edit this file to change behavior. No code changes needed.
+# Every change here should be reviewed/approved (keep it in version control).
+# ==========================================================================
+
+meta:
+  brand: "Tanaghom / Moataz Mashal"
+  timezone: "Asia/Dubai"          # post times are interpreted in this tz
+  default_language: "ar-PS"        # Palestinian Arabic
+  secondary_language: "en"
+
+# --- Calendar / round template (PARAMETRIC — override per round) -----------
+calendar:
+  default_template: "28-day"
+  templates:
+    28-day:
+      period_len_days: 28
+      posts_per_day: 2
+      post_times: ["09:00", "20:00"]
+      pillar_distribution:        # per round (total must equal posts in period)
+        P1_SELF: 22
+        P2_RELATIONSHIPS: 17
+        P3_PARENTING: 9
+        P4_WORK: 4
+        P5_MEANING_ALLAH: 4
+      format_distribution_weekly: # per week (x4 = period). SAFE FALLBACK ONLY — at planning time the
+                                  # managed content_format weights override this
+                                  # (planner/plan_round.py:apply_managed_format_distribution). These use only
+                                  # real operational format names so the fallback can never emit a format that
+                                  # is not a stored content_format. CANON-014's 7 source formats consolidate to
+                                  # this 4-format model per docs/design/lunaris/09-content-framework-alignment.md
+                                  # (the four "Reel — Studio/iPhone/Podcast/Event Cut" variants → "Hero Reel").
+        "Hero Reel": 9            # = CANON-014 Reel — Studio(4) + iPhone(2) + Podcast(2) + Event Cut(1)
+        "Carousel": 3
+        "Pic + Caption": 1
+        "3sec Reel + Caption": 1
+  allow_adhoc_slots: true         # inject one-off posts outside the template
+  adhoc_consumes_cursor: false    # off-cycle ad-hoc don't advance HCS cursor
+
+# --- No-repeat engine ------------------------------------------------------
+engine:
+  hcs_order: "sequential"         # top-to-bottom within pillar (CANON-015)
+  carry_cursor_across_rounds: true
+  enforce_lens_rotation: true     # round N lens != round N-1 for same HCS
+  dedup_safety_net:               # #184 — BOOTSTRAP FALLBACK ONLY: the effective repetition
+    enabled: true                 # policy is DB-managed (repetition_policy table, super-admin
+    similarity_threshold: 0.86    # controlled via PUT /repetition-policy, audited). Without a
+    scope: "hcs"                  # managed row the production default is scope "all" (no
+                                  # same-topic reuse across history, per #183) — this legacy
+                                  # `scope` value is deliberately NOT the effective default;
+                                  # only enabled/threshold/max_regenerations seed the fallback.
+    max_regenerations: 3          # regen tries before accepting / flagging a near-dup
+  # policy_admin:                 # #184 — who may edit managed policies (top-level authority seam;
+  #   roles: [super_admin, admin, content_owner]   # defaults shown — content_owner is today's
+  #   permissions: [config.write, policy.admin]    # real holder; remap here when IAM matures
+
+# --- Writers (Agent 1 Topic + Agent 2 Script) hard self-checks --------------
+writers:
+  hook_word_min: 3                # CANON-013: spoken hook 3–7 words
+  hook_word_max: 7
+  hook_max_regenerations: 3       # regen tries to satisfy CANON-013 hook rules
+  script_max_regenerations: 2     # regen tries to satisfy the Mandatory Delivery Check
+  rework_verifier:                # second-pass judge for request-change compliance
+    enabled: true
+    temperature: 0.1
+    max_tokens: 500
+    timeout: 90
+  exemplars_file: "methodology/voice/dialect_exemplars.json"
+  exemplars_per_slot: 4           # pillar-matched few-shot voice anchors (built from real captions)
+  islamic_anchor:                 # Quran/Hadith anchors: organic-only, omit by default, never forced
+    policy: "organic_only"
+    bias: "omit_by_default"       # when in doubt, leave it out
+    require_justification: true   # used=true must carry an organic anchor_justification + organic delivery flag;
+                                  # otherwise the script regenerates WITHOUT the anchor (never force-fit)
+    verify: true                  # adversarial second pass (default REMOVE on doubt) — the writer
+                                  # self-certifies every anchor, so a skeptical check prunes the
+                                  # decorative/misapplied ones and regenerates the script without them
+  dialect_guard:                  # flag non-Palestinian markers in hook/script
+    enabled: true
+    markers:                      # HARD — matched on word boundary -> force regenerate
+      gulf:     ["مو", "وايد", "شلون", "هسة", "هسه", "شفيك", "أبغى", "ابغى"]
+      egyptian: ["دلوقتي", "عايز", "عاوز", "عايزين", "إزاي", "ازاي", "مفيش", "بتاع", "بتاعة",
+                 "بتاعتك", "ده", "دي", "دول", "كده", "كدة", "اوي", "أوي"]
+    soft_markers:                 # SOFT — warn + flag only, do NOT auto-regenerate
+      egyptian: ["حاجة", "حاجات"]
+
+# --- Provider registry (connection only; keys come from env) ----------------
+# A flat registry a settings UI can edit: each entry is one endpoint. All chat
+# providers are OpenAI-compatible so they share a single client. `api_key_env`
+# names the env var holding the key — never inline secrets ("" = no key needed).
+providers:
+  groq:                           # writing backend — fast hosted Llama/Qwen, OpenAI-compatible
+    kind: "openai_chat"
+    base_url: "https://api.groq.com/openai/v1"
+    api_key_env: "GROQ_API_KEY"
+    max_retries: 6                # free tier has low per-minute TPM; ride out the resets
+    retry_base_seconds: 12        # floor for transient 429 backoff (TPM resets each minute)
+  openrouter:                     # frontier / free models, OpenAI-compatible
+    kind: "openai_chat"
+    base_url: "https://openrouter.ai/api/v1"
+    api_key_env: "OPENROUTER_API_KEY"
+  gemini:                         # Google Gemini via its OpenAI-compatible endpoint
+    kind: "openai_chat"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+    api_key_env: "GEMINI_API_KEY"
+  ollama:                         # HOST-LOCAL Ollama chat (dev host / VPS host via
+                                  # host.docker.internal). NOT the GFWS machine — do not
+                                  # use this provider for the GFWS trial hop (see models).
+    kind: "openai_chat"
+    base_url: "http://host.docker.internal:11434/v1"   # OLLAMA_BASE_URL overrides
+    api_key_env: ""
+  ollama_embed:                   # EMBEDDINGS-ONLY (mxbai-embed-large / whisper) — never a
+                                  # chat hop. On STITCH-VPS this is the VPS-local Ollama.
+    kind: "ollama"
+    base_url: "http://host.docker.internal:11434"
+    api_key_env: ""
+
+# --- Models per stage: primary + ordered fallbacks; per-stage gen params -----
+# On any provider error / quota / HTTP 402 the runner falls through
+# primary -> fallback[0] -> fallback[1] ... and logs each hop. Each {provider,model}
+# references the registry above. A settings UI maps 1:1 onto this shape.
+models:
+  # === Developer route (reversible, CONFIG-ONLY) ================================
+  # OPERATOR-PREFERRED order for topic_hook + script:
+  # OpenRouter Scout -> Groq Llama 3.3 -> Groq Qwen 3.6.
+  # The current OpenRouter credential may be rejected by the provider; that is runtime
+  # health, not authority to rewrite the operator-owned preference. The runner therefore
+  # attempts Scout, logs the exact failure, and attributes the served Groq fallback.
+  #
+  # GFWS Ollama is the AUTHORIZED FINAL LOGICAL hop but is DEFERRED — deliberately NOT
+  # an executable fallback here. The shared `ollama` provider resolves to
+  # host.docker.internal (the host's embeddings-only Ollama), which is NOT the separate
+  # GFWS machine; wiring a chat model under it would be a knowingly-wrong endpoint/model
+  # pairing. Add GFWS only via a DEDICATED `gfws_ollama` provider once its private
+  # endpoint is verified over Tailscale (out of scope for #230 — no networking here).
+  topic_hook:                     # voice-critical — Agent 1 hook
+    temperature: 0.85
+    max_tokens: 1500
+    primary:  { provider: "openrouter", model: "meta-llama/llama-4-scout" }
+    fallback:
+      # Groq Llama 3.3 — live developer-account fallback while OpenRouter is unhealthy.
+      - provider: "groq"
+        model: "llama-3.3-70b-versatile"
+      # Groq Qwen — independent model family for provider-local resilience.
+      - provider: "groq"
+        model: "qwen/qwen3.6-27b"
+      # (DEFERRED) GFWS Ollama — authorized final logical hop; add via a dedicated
+      #    `gfws_ollama` provider when its private endpoint is verified over Tailscale.
+  script:                         # voice-critical — Agent 2 script
+    temperature: 0.8
+    max_tokens: 2500
+    primary:  { provider: "openrouter", model: "meta-llama/llama-4-scout" }
+    fallback:
+      - provider: "groq"
+        model: "llama-3.3-70b-versatile"
+      - provider: "groq"
+        model: "qwen/qwen3.6-27b"
+      # (DEFERRED) GFWS Ollama — authorized final logical hop; see topic_hook note above.
+  embeddings:                     # stays local on Ollama (mxbai-embed-large)
+    primary:  { provider: "ollama_embed", model: "mxbai-embed-large" }  # 1024-dim, matches schema
+  planner:                        # not used until later milestones
+    primary:  { provider: "openrouter", model: "frontier-reasoning" }
+  asr:
+    primary:  { provider: "ollama_embed", model: "whisper-large-v3" }
+
+# --- Backend bake-off (read-only; no DB writes) -----------------------------
+# `run_writers.py bakeoff` generates hook_text + script_ar for each writer over
+# these slots and prints them side by side with the CANON-013 hook checks. Use it
+# to choose the primary, then set models.topic_hook/script.primary above.
+bakeoff:
+  slots: ["R1-D01-AM", "R1-D01-PM", "R1-D03-AM"]   # one each: P1 / P2 / P5
+  temperature: 0.8
+  max_tokens: 2500
+  writers:
+    - { label: "Llama 3.3 70B", provider: "groq", model: "llama-3.3-70b-versatile" }
+    - { label: "Qwen 3.6 27B",  provider: "groq", model: "qwen/qwen3.6-27b" }
+
+# --- Approval gates (per stage; fully configurable) ------------------------
+gates:
+  schedule_review:                # stage 0: confirm the planned schedule/calendar before topic title generation
+    scope: "batch"
+    policy: "fixed"
+    approval:
+      rule: "or"
+      users: ["khal"]
+    allow_partial_batch: true
+    reviews_status: "RESERVED"
+    approve_to:    "SCHEDULE_APPROVED"
+    reject_to:     "REJECTED"
+  # reviews_status = slot status this gate reviews; approve_to = status on approval.
+  # The two-stage flow (topics approved BEFORE scripting) is defined here, not in code.
+  topic_review:                   # stage 1: review the proposed topic + hook (no script yet)
+    scope: "batch"                # batch | item
+    policy: "fixed"               # fixed | adhoc
+    approval:
+      rule: "or"
+      users: ["khal"]
+    allow_partial_batch: true
+    reviews_status: "TOPIC_PROPOSED"
+    approve_to:    "TOPIC_APPROVED"
+    rework_mode:   "topic"        # request-change re-runs this agent (run_writers rework --stage topic)
+    changes_to:    "CHANGES_REQUESTED"  # request_change parks the slot here (excluded from gates; not approvable) until reworked
+    reject_to:     "REJECTED"     # reject = reversible 'dropped' (excluded but recoverable via reopen) — NOT destroyed
+    generator:      "ai"          # UI/agent can trigger generation (POST .../generate)
+    generates_from: "SCHEDULE_APPROVED"    # writer INPUT status (schedule review output)
+    writer_mode:    "topics"      # run_writers entry point (topics | scripts)
+  script_review:                  # stage 2: review the full script (approved topics only)
+    scope: "batch"
+    policy: "fixed"
+    approval:
+      rule: "or"
+      users: ["khal"]
+    allow_partial_batch: true
+    reviews_status: "DRAFT_ASSIGNED"
+    approve_to:    "APPROVED_ASSIGNED"
+    rework_mode:   "script"
+    changes_to:    "CHANGES_REQUESTED"
+    reject_to:     "REJECTED"
+    generator:      "ai"          # UI/agent can trigger generation
+    generates_from: "TOPIC_APPROVED"   # writer INPUT status (approved topics)
+    writer_mode:    "scripts"
+  # --- Mandatory sign-off gates (kind: signoff) — attest a slot WITHOUT moving its status.
+  # They block the publish transition until done. Tied to the right reviewer principals/roles.
+  # reviews_status is a LIST so the same review can be RE-ESCALATED at finished-media stages (B3):
+  # an escalation NEWER than the last sign-off re-opens the requirement.
+  native_review:                  # native Palestinian editor signs off the dialect (on-demand)
+    kind: "signoff"
+    scope: "batch"
+    policy: "adhoc"               # opened when a reviewer escalates (or always, in 'required' mode)
+    approval:
+      rule: "or"
+      roles: ["language_reviewer"]
+    allow_partial_batch: true
+    reviews_status: ["APPROVED_ASSIGNED", "PRODUCED", "EDITED"]   # re-escalatable on finished media
+    requires_flag: "needs_native_review"   # only slots whose script carries this flag
+  scholar_review:                 # scholar signs off a Qur'an/Hadith anchor (on-demand)
+    kind: "signoff"
+    scope: "batch"
+    policy: "adhoc"
+    approval:
+      rule: "or"
+      roles: ["scholar"]
+    allow_partial_batch: true
+    reviews_status: ["APPROVED_ASSIGNED", "PRODUCED", "EDITED"]   # re-escalatable on finished media
+    requires_flag: "needs_scholar_review"
+  final_review:                   # content sign-off — clears an item INTO production (before spend)
+    scope: "batch"
+    policy: "fixed"
+    approval:
+      rule: "and"                 # both must approve a slot before it passes
+      users: ["khal", "huda"]     # content owner + a second reviewer
+    allow_partial_batch: true
+    reviews_status: "APPROVED_ASSIGNED"
+    approve_to:    "READY_FOR_PRODUCTION"   # native/scholar enforced HERE, before money is spent
+    rework_mode:   "script"
+    changes_to:    "CHANGES_REQUESTED"
+    reject_to:     "REJECTED"
+    enforce_mandatory_reviews: true   # respect the per-review policy below before production
+  # --- M9·B2 manual lifecycle gates (generator = manual; plain transition gates). The human
+  # uploads assets (DAM) at the stage's input state, then the gate confirms the work is done.
+  # Each gate's approve_to chains into the NEXT stage's reviews_status. AVP/POSTIZ later fill
+  # the generator slot via the integration contracts (docs/INTEGRATION_CONTRACTS.md).
+  production_review:              # confirm the shoot is done + raw cuts uploaded
+    scope: "batch"
+    policy: "fixed"
+    approval:
+      rule: "or"
+      users: ["khal"]
+    allow_partial_batch: true
+    reviews_status: "READY_FOR_PRODUCTION"
+    approve_to:    "PRODUCED"
+  edit_review:                    # review/approve the edited media (per-edit or batch)
+    scope: "batch"
+    policy: "fixed"
+    approval:
+      rule: "or"
+      users: ["khal"]
+    allow_partial_batch: true
+    reviews_status: "PRODUCED"
+    approve_to:    "EDITED"
+    enforce_mandatory_reviews: true   # B3: a finished-media re-escalation holds the edit too
+  distribution_review:            # publish hard-floor — format/schedule (POSTIZ pushes later)
+    scope: "batch"
+    policy: "fixed"
+    approval:
+      rule: "or"
+      users: ["khal"]
+    allow_partial_batch: true
+    reviews_status: "EDITED"
+    approve_to:    "SCHEDULED"
+    enforce_mandatory_reviews: true   # B3: nothing publishes if a fresh native/scholar escalation pends
+
+# --- Human reviews — the system SUGGESTS, the reviewer disposes (escalate / waive w/ reason) -----
+reviews:
+  require_native_dialect_review: true   # the writer sets needs_native_review on every ar-PS script
+  require_scholar_review_for_islamic_anchor: true  # writer sets needs_scholar_review when an anchor is used
+  # Per-review POLICY (reuses the gate engine's adhoc + multi-approver). mode:
+  #   reviewer_discretion = a suggestion; un-escalated never blocks; reviewer MAY escalate or waive
+  #   suggested           = must be resolved (escalate->sign-off, or waive with a reason) before publish
+  #   required            = always blocks until the named reviewer signs off (no waive)
+  native:
+    mode: "reviewer_discretion"
+    flag: "needs_native_review"
+    gate: "native_review"
+    role: "language_reviewer"
+  religious:
+    mode: "reviewer_discretion"
+    flag: "needs_scholar_review"
+    gate: "scholar_review"
+    role: "scholar"
+
+# --- Unified Actor Model (M9 · B3) — behavior = f(autonomy × stage-policy × permissions) -----
+# The engine READS these per-principal dims (seeded on `principal` in 006) at the review-discretion
+# decision. Guardrails are non-negotiable: default-low autonomy; HARD FLOORS always keep a human
+# gate (publish / spend / religious); agents never self-escalate; most-restrictive-wins; every
+# autonomous decision is logged + human-overridable.
+actor_model:
+  enabled: true
+  default_autonomy: "propose_only"        # safest default when a principal has none set
+  autonomous_min_level: "act_and_notify"  # min autonomy a NON-human needs to act without prior human approval
+  require_permission: false               # read permissions always; HARD-enforce only when true (perms seeded later)
+  waive_permission: "review.waive"        # ABAC token checked for an autonomous waive (when require_permission)
+  hard_floors:                            # ALWAYS keep a human gate, regardless of autonomy
+    reviews: ["religious"]                # scholar review can never be auto-waived by a non-human
+    gates: ["final_review", "scholar_review", "distribution_review"]  # content sign-off, scholar, publish
+    actions: ["spend", "publish"]
+
+# --- Stage contract (M9 · B1) — the pipeline as a graph of uniform stages -------------------
+# A stage = { generator, consumes (input directive), emits (output directive), gate }.
+# generator: ai (topic/script, built) | manual (production/edit/distribution, human now) |
+#            external (AVP/POSTIZ later, via the SAME contract — plug into the generator slot).
+# `emits` is the OUTPUT directive a stage produces; the spine records it when that stage's gate
+# approves (approved topic = directive into script; approved script = production directions).
+# Stages with no `gate` yet are DECLARED seams (contract visible, not wired) — no-hardcode.
+stages:
+  topic:                          # AI: methodology selection -> topic + spoken hook
+    generator: "ai"
+    consumes: "strategy_directive"
+    emits:    "topic_directive"
+    gate:     "topic_review"
+  script:                         # AI: approved topic -> full ar-PS script + production directions
+    generator: "ai"
+    consumes: "topic_directive"
+    emits:    "production_directive"
+    gate:     "script_review"
+  production:                     # MANUAL today (shoot/upload raw cuts); AVP plugs in later
+    generator: "manual"
+    consumes: "production_directive"
+    emits:    "media_directive"
+    gate:     "production_review"  # M9·B2 — wired
+  media_edit:                     # MANUAL today (edits/approve); AVP edit-generator later
+    generator: "manual"
+    consumes: "media_directive"
+    emits:    "distribution_directive"
+    gate:     "edit_review"        # M9·B2 — wired
+  distribution:                   # MANUAL today (format/schedule/publish); POSTIZ executor later
+    generator: "manual"
+    consumes: "distribution_directive"
+    emits:    null                 # terminal stage (the published post)
+    gate:     "distribution_review" # M9·B2 — the publish hard-floor
+
+# --- Directives (M9 · B1) — emit + persist the handoff package; it is also memory ------------
+directives:
+  enabled: true                   # master switch for emitting/persisting directives
+  schema_version: "1.0"
+  persist: true                   # write to the `directive` table (and audit `directive_emitted`)
+
+# --- Integration providers (M9 · B2) — external executors that fill a stage's generator slot.
+# DEFINED + STUBBED here (docs/INTEGRATION_CONTRACTS.md), NOT integrated. Each consumes/emits the
+# stage's directive (B1) and reads/writes the DAM; disabled until its block is wired in Phase C.
+integrations:
+  avp:                            # Agentic Video Producer -> media_edit generator
+    enabled: false
+    stage: "media_edit"
+    kind: "external"
+    consumes: "media_directive"
+    emits:    "distribution_directive"
+  postiz:                         # POSTIZ -> distribution executor behind the publish gate
+    enabled: false
+    stage: "distribution"
+    kind: "external"
+    consumes: "distribution_directive"
+    emits:    null
+  analytics:                      # user's analytics system -> feedback into Strategy (proposals)
+    enabled: false
+    stage: "strategy"
+    kind: "external"
+    consumes: null
+    emits:    "strategy_directive"   # analytics-driven proposals pass a review gate before applying
+
+# --- DAM (M9 · B2) — minimal asset model (references media; no binaries in DB) ----------------
+dam:
+  enabled: true
+  storage_default: "reference"    # reference | local | s3 | drive — where asset.uri points
+  platform_variants: ["instagram_reel", "tiktok", "youtube_short", "x_video"]
+
+# --- SDAM (#244) — READ-ONLY ResourceSpace provider adapter -------------------
+# Provider-neutral identity binding + append-only readiness observations. SDAM stays authoritative;
+# Tanaghom persists only the opaque binding + minimum decision evidence. Restricted read-only userkey
+# (authmode=userkey); the API key is an opaque secret reference (#187), never inlined here.
+sdam:
+  enabled: false                  # off by default; the trial instance is provisioned per #234
+  provider_key: "resourcespace"
+  base_url: "http://100.119.170.109:8088"   # private Tailscale IP (container-resolvable; not public)
+  api_user: "stitch_readonly"               # restricted read-only principal (search/read/download only)
+  api_key_env: "RESOURCESPACE_API_KEY"      # opaque secret reference; value provisioned via #187, never committed
+  tanaghom_asset_id_field_ref: 99           # ResourceSpace custom field holding the opaque asset_id
+  video_resource_type: 3
+  freshness_policy_version: 1               # -> sdam_freshness_policy (ttl/backoff)
+
+# --- Surfaces --------------------------------------------------------------
+surfaces:
+  dashboard: true
+  dashboard_url: "http://localhost:3000"    # Telegram links reviewers here for detail
+  telegram: true
+  telegram_approver_chat_id: ""             # set via /start
+  telegram_ux:                              # Telegram is summary-first (no per-slot spam)
+    verbosity: "digest"                     # digest | itemized
+    step_batch_size: 5                      # how many items "step through" reveals at a time

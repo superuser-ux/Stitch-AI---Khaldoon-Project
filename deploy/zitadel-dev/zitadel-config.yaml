@@ -1,0 +1,38 @@
+Log:
+  Level: info
+
+Port: 8080
+ExternalDomain: iam.localhost
+ExternalPort: 13210
+ExternalSecure: false
+
+TLS:
+  Enabled: false
+
+Database:
+  postgres:
+    Host: postgres
+    Port: 5432
+    Database: zitadel
+    User:
+      SSL:
+        Mode: disable
+    Admin:
+      SSL:
+        Mode: disable
+
+DefaultInstance:
+  Features:
+    LoginV2:
+      Required: true
+      BaseURI: http://iam.localhost:13210/ui/v2/login/
+
+OIDC:
+  DefaultLoginURLV2: http://iam.localhost:13210/ui/v2/login/login?authRequest=
+  DefaultLogoutURLV2: http://iam.localhost:13210/ui/v2/login/logout?post_logout_redirect=
+
+SAML:
+  DefaultLoginURLV2: http://iam.localhost:13210/ui/v2/login/login?samlRequest=
+
+Telemetry:
+  Enabled: false

@@ -1,0 +1,107 @@
+@import "tailwindcss";
+/* lunaris fonts are vendored local assets exposed via next/font/local:
+   --font-geist (UI) · --font-jbmono (data) · --font-amiri (hooks)
+   · --font-plex-ar (scripts) · --font-cairo (UI Arabic). */
+
+@custom-variant dark (&:is(.dark *));
+
+/* lunaris tokens — light (default values) + dark. Orange primary; mono+geist; HSL for legibility. */
+:root {
+  --background: 80 8% 95%;
+  --foreground: 0 0% 7%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 7%;
+  --primary: 31 100% 50%;
+  --primary-foreground: 0 0% 7%;
+  --secondary: 80 6% 91%;
+  --secondary-foreground: 0 0% 7%;
+  --muted: 80 8% 95%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 80 8% 92%;
+  --accent-foreground: 0 0% 7%;
+  --destructive: 13 82% 47%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 150 55% 36%;
+  --warning: 35 92% 45%;
+  --border: 80 3% 80%;
+  --input: 80 3% 80%;
+  --ring: 0 0% 40%;
+  --radius: 0.875rem;
+  --font-ar-hook: var(--font-cairo), system-ui, sans-serif;
+  --font-ar-script: var(--font-plex-ar), system-ui, sans-serif;
+  --font-ar-ui: var(--font-cairo), system-ui, sans-serif;
+}
+
+.dark {
+  --background: 0 0% 7%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 31 100% 50%;
+  --primary-foreground: 0 0% 7%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 75 2% 72%;
+  --accent: 0 0% 13%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 12 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 150 60% 50%;
+  --warning: 35 92% 55%;
+  --border: 0 0% 18%;
+  --input: 0 0% 20%;
+  --ring: 0 0% 45%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * { border-color: hsl(var(--border)); }
+  body { background-color: hsl(var(--background)); color: hsl(var(--foreground)); font-family: var(--font-sans); }
+}
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+/* Role-based Arabic typography. Default Arabic (UI/inline) = Cairo; hooks/titles = Cairo for
+   clearer card scanning; scripts = IBM Plex Sans Arabic (dense, space-efficient). */
+[dir="rtl"], [dir="auto"] { font-family: var(--font-ar-ui); }
+.ar-hook { font-family: var(--font-ar-hook); }
+.ar-script { font-family: var(--font-ar-script); }
+/* #91/#54 — Arabic prose blocks (topic body, rationale): `overflow-wrap: anywhere` so inline mixed
+   English/URLs/hashtags wrap cleanly inside RTL text instead of overflowing. Pair on the element with
+   dir="auto" and a roomy Tailwind line-height (leading-7) for Arabic diacritics/descenders. */
+.ar-body { overflow-wrap: anywhere; }

@@ -1,0 +1,39 @@
+{
+  "pencil_document": "/Users/Kay/.pencil/documents/0be1bf85-e579-428f-82b2-9600c88b3349/pencil-lunaris.pen",
+  "sync_status_file": "docs/design/lunaris/sync-status.json",
+  "managed_exports": [
+    {
+      "board": "Tanaghom Overview",
+      "node_id": "p2cpN",
+      "export": "docs/design/lunaris/01-overview.png"
+    },
+    {
+      "board": "Workflow Graph",
+      "node_id": "gedMY",
+      "export": "docs/design/lunaris/02-workflow.png"
+    },
+    {
+      "board": "v2 \u2014 Agentic Content OS (vision)",
+      "node_id": "s8RkJ3",
+      "export": "docs/design/lunaris/04-vision-agentic-os.png"
+    }
+  ],
+  "reference_exports": [
+    "docs/design/lunaris/00-foundation-options.png",
+    "docs/design/lunaris/03-reskin-topics.png"
+  ],
+  "tracked_repo_surfaces": [
+    "dashboard/app/globals.css",
+    "dashboard/app/layout.tsx",
+    "dashboard/app/page.tsx",
+    "dashboard/lib/review-context.tsx",
+    "dashboard/components/review/app-shell.tsx",
+    "dashboard/components/review/new-run-dialog.tsx",
+    "dashboard/components/review/overview-lens.tsx",
+    "dashboard/components/review/review-item.tsx",
+    "dashboard/components/review/review-surface.tsx",
+    "dashboard/components/review/stage-action.tsx",
+    "dashboard/components/review/theme-switcher.tsx",
+    "dashboard/components/review/workflow-lens.tsx"
+  ]
+}

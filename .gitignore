@@ -1,0 +1,37 @@
+# secrets & local config
+# explicit repo-wide coverage so local env/secret files are intentionally
+# protected everywhere, not just via per-directory .gitignore rules
+.env
+.env.*
+*.env
+*.env.*
+*.local
+system_config.yaml
+
+# docker volumes / local data
+db_data/
+n8n_data/
+ollama_data/
+
+# build artifacts
+node_modules/
+__pycache__/
+*.pyc
+*.log
+dist/
+build/
+tmp/
+
+# local QA / integration artifacts (never committed)
+output/
+.playwright-cli/
+.pnpm-store/
+# local QA-scout scratch — contains agent credentials; never commit
+ops/qa-scout/
+# regenerable client/operator deliverable assets (screenshots/guides, refreshed per #46);
+# kept out of git history to avoid compounding binary bloat — see HANDOFF.md
+artifacts/
+
+# os
+.DS_Store
+Thumbs.db
